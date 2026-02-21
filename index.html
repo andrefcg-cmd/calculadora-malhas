@@ -222,9 +222,9 @@ select:focus{border-color:var(--pri)}
 </div>
 <div class="sup-modal" id="supModal" onclick="if(event.target===this)this.classList.remove('show')">
     <div class="sup-box" onclick="event.stopPropagation()">
-        <div class="sup-header"><h3>&#128666; Fornecedores Cadastrados</h3><button class="mx" onclick="document.getElementById('supModal').classList.remove('show')">&times;</button></div>
+        <div class="sup-header"><h3>&#128666; Fornecedores</h3><div style="display:flex;gap:8px;align-items:center"><a href="https://docs.google.com/spreadsheets/d/1u2y-9yH2qQX290y98bGA6GNLysf_fP-dT8Nzl40MZ3M/edit#gid=0" target="_blank" style="font-size:11px;color:#7b1fa2;text-decoration:none;background:#f3e8fd;padding:4px 10px;border-radius:6px;font-weight:600">📊 Abrir Planilha</a><button class="mx" onclick="document.getElementById('supModal').classList.remove('show')">&times;</button></div></div>
         <div class="sup-tabs" id="supTabs"></div>
-        <div id="supContent"></div>
+        <div id="supContent" style="max-height:60vh;overflow-y:auto"></div>
     </div>
 </div>
 <div class="mo" id="modal" onclick="if(event.target===this)this.classList.remove('show')">
@@ -663,83 +663,173 @@ function showCF(){const f=document.getElementById('cfb');f.classList.add('show')
 // === SUPPLIER CATALOG ===
 let supTabActive='fios';
 function abrirFornecedores(){
-    supTabActive='fios';
+    supTabActive=_curArt?'fios':'todos';
+    if(!_sheetsCache) loadSheetsSuppliers().then(()=>renderSupCatalog());
     renderSupCatalog();
     document.getElementById('supModal').classList.add('show');
 }
 
 function renderSupCatalog(){
     const allSups=getSuppliers();
-    // Categorize
+    const hasArt=!!_curArt;
+    const a=hasArt?_curArt:null;
+    const ml=hasArt?ML.find(m=>m.id===a.id):null;
+    const artName=ml?ml.nome:'';
+    const artCor=artName.includes('BRANCO')?'BRANCO':artName.includes('PRETO')?'PRETO':'';
+
+    // Get fio names from current article
+    const artFios=hasArt?a.fios.map(f=>f.titulo):[];
+
+    // Categorize local suppliers
     const cats={fios:{},malharia:[],tingir:[]};
     Object.keys(allSups).forEach(key=>{
         const list=allSups[key];
         if(!list||!list.length) return;
-        if(key.startsWith('fio:')){
-            const fioName=key.substring(4);
-            cats.fios[fioName]=list;
-        } else if(key==='malharia'){
-            cats.malharia=list;
-        } else if(key==='tingir'){
-            cats.tingir=list;
-        }
+        if(key.startsWith('fio:')) cats.fios[key.substring(4)]=list;
+        else if(key==='malharia') cats.malharia=list;
+        else if(key==='tingir') cats.tingir=list;
     });
 
-    // Tabs
-    const fioCount=Object.values(cats.fios).reduce((s,l)=>s+l.length,0);
+    // Tabs - show counts relevant to article
+    const fioCount=artFios.reduce((s,fn)=>{
+        const local=(cats.fios[fn]||[]).length;
+        const sheets=getSheetsForFio(fn).length;
+        return s+local+sheets;
+    },0);
+    const mCount=(cats.malharia.length)+getSheetsForTecelagem(artName).length;
+    const tCount=(cats.tingir.length)+getSheetsForTinturaria(artName).length;
+
     let tabs=`<div class="sup-tab ${supTabActive==='fios'?'active':''}" onclick="supTabActive='fios';renderSupCatalog()">&#129525; Fios (${fioCount})</div>`;
-    tabs+=`<div class="sup-tab ${supTabActive==='malharia'?'active':''}" onclick="supTabActive='malharia';renderSupCatalog()">&#9881; Malharia (${cats.malharia.length})</div>`;
-    tabs+=`<div class="sup-tab ${supTabActive==='tingir'?'active':''}" onclick="supTabActive='tingir';renderSupCatalog()">&#127912; Tinturaria (${cats.tingir.length})</div>`;
+    tabs+=`<div class="sup-tab ${supTabActive==='malharia'?'active':''}" onclick="supTabActive='malharia';renderSupCatalog()">&#9881; Malharia (${mCount})</div>`;
+    tabs+=`<div class="sup-tab ${supTabActive==='tingir'?'active':''}" onclick="supTabActive='tingir';renderSupCatalog()">&#127912; Tinturaria (${tCount})</div>`;
+    tabs+=`<div class="sup-tab ${supTabActive==='todos'?'active':''}" onclick="supTabActive='todos';renderSupCatalog()">&#128203; Todos</div>`;
     document.getElementById('supTabs').innerHTML=tabs;
 
+    // Cor badge
+    const corBadge=artCor?`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;${artCor==='PRETO'?'background:#333;color:#fff':'background:#f5f5f5;color:#333;border:1px solid #ddd'}">${artCor}</span>`:'';
+
     let content='';
-    if(supTabActive==='fios'){
-        const fioKeys=Object.keys(cats.fios).sort();
-        // Also list fio types with no suppliers
-        const allFioTypes=Object.keys(ALL_FIOS).sort();
-        if(!allFioTypes.length){
-            content='<div class="sup-empty">Nenhum fio cadastrado.</div>';
-        } else {
-            content='<div class="sup-cat">';
-            allFioTypes.forEach(fioName=>{
-                const list=cats.fios[fioName]||[];
-                const refPrice=ALL_FIOS[fioName];
-                const priceLabel=refPrice>0?` (ref. site: ${fR(refPrice)})`:' (sem preço ref.)';
-                content+=`<div class="sup-cat-title">&#129525; ${fioName}<span style="font-weight:400;font-size:10px;color:var(--mut)">${priceLabel}</span></div>`;
-                if(!list.length){
-                    content+=`<div style="padding:6px 12px;font-size:11px;color:var(--mut);font-style:italic">Nenhum fornecedor cadastrado</div>`;
-                } else {
-                    list.forEach((s,i)=>{
-                        content+=`<div class="sup-cat-item ${s.ativo?'active':''}">
-                            <span class="sname">${s.nome}</span>
-                            <span class="sprice">${fR(s.preco)}/kg</span>
-                            ${s.ativo?'<span class="sbadge">Ativo</span>':''}
-                            <button class="btn-del" onclick="removeSupFromCatalog('fio:${esc(fioName)}',${i})" title="Remover">&#10005;</button>
-                        </div>`;
-                    });
-                }
-            });
-            content+='</div>';
+    if(!hasArt){
+        content='<div class="sup-empty">Calcule um artigo primeiro para ver os fornecedores relevantes.</div>';
+    } else if(supTabActive==='fios'){
+        content='<div class="sup-cat">';
+        if(artFios.length===0){
+            content+='<div class="sup-empty">Nenhum fio neste artigo.</div>';
         }
-    } else {
-        const key=supTabActive;
-        const label=key==='malharia'?'Malharia':'Tinturaria';
-        const list=cats[key]||[];
-        if(!list.length){
-            content=`<div class="sup-empty">Nenhum fornecedor de ${label.toLowerCase()} cadastrado.<br>Calcule um artigo e clique em Editar para adicionar.</div>`;
-        } else {
-            content='<div class="sup-cat">';
-            content+=`<div class="sup-cat-title">${label}</div>`;
-            list.forEach((s,i)=>{
+        artFios.forEach(fioName=>{
+            const localList=cats.fios[fioName]||[];
+            const sheetsList=getSheetsForFio(fioName);
+            const refPrice=ALL_FIOS[fioName]||0;
+            const priceLabel=refPrice>0?`Site: ${fR(refPrice)}/kg`:'sem preço ref.';
+
+            content+=`<div class="sup-cat-title">&#129525; ${fioName} ${corBadge} <span style="font-weight:400;font-size:11px;color:var(--mut);margin-left:8px">${priceLabel}</span></div>`;
+
+            if(sheetsList.length>0){
+                sheetsList.forEach(s=>{
+                    const dif=refPrice>0?((s.preco-refPrice)/refPrice*100):0;
+                    const difStr=dif!==0?(dif>0?`<span style="color:#c62828;font-size:10px">+${fB(dif,1)}%</span>`:`<span style="color:#009624;font-size:10px">${fB(dif,1)}%</span>`):'';
+                    content+=`<div class="sup-cat-item" style="background:#f3e8fd">
+                        <span style="color:#7b1fa2;font-weight:700;font-size:11px">📊</span>
+                        <span class="sname">${s.nome}</span>
+                        <span class="sprice">${fR(s.preco)}/kg</span>
+                        ${difStr}
+                    </div>`;
+                });
+            }
+            localList.forEach((s,i)=>{
                 content+=`<div class="sup-cat-item ${s.ativo?'active':''}">
                     <span class="sname">${s.nome}</span>
                     <span class="sprice">${fR(s.preco)}/kg</span>
                     ${s.ativo?'<span class="sbadge">Ativo</span>':''}
-                    <button class="btn-del" onclick="removeSupFromCatalog('${esc(key)}',${i})" title="Remover">&#10005;</button>
+                    <button class="btn-del" onclick="removeSupFromCatalog('fio:${esc(fioName)}',${i})" title="Remover">&#10005;</button>
                 </div>`;
             });
-            content+='</div>';
+            if(!sheetsList.length&&!localList.length){
+                content+=`<div style="padding:6px 12px;font-size:11px;color:var(--mut);font-style:italic">Nenhum fornecedor cadastrado</div>`;
+            }
+        });
+        content+='</div>';
+    } else {
+        const key=supTabActive;
+        const label=key==='malharia'?'Malharia (fabricação)':'Tinturaria (tingimento)';
+        const localList=cats[key]||[];
+        const sheetsList=key==='malharia'?getSheetsForTecelagem(artName):getSheetsForTinturaria(artName);
+        const sitePrice=key==='malharia'?a.malharia:a.tingir;
+
+        content='<div class="sup-cat">';
+        content+=`<div class="sup-cat-title">${label} ${corBadge} <span style="font-weight:400;font-size:11px;color:var(--mut);margin-left:8px">Site: ${fR(sitePrice)}/kg</span></div>`;
+        content+=`<div style="padding:4px 12px;font-size:11px;color:var(--mut)">${artName}</div>`;
+
+        if(sheetsList.length>0){
+            sheetsList.forEach(s=>{
+                const dif=sitePrice>0?((s.preco-sitePrice)/sitePrice*100):0;
+                const difStr=dif!==0?(dif>0?`<span style="color:#c62828;font-size:10px">+${fB(dif,1)}%</span>`:`<span style="color:#009624;font-size:10px">${fB(dif,1)}%</span>`):'';
+                content+=`<div class="sup-cat-item" style="background:#f3e8fd">
+                    <span style="color:#7b1fa2;font-weight:700;font-size:11px">📊</span>
+                    <span class="sname">${s.nome}</span>
+                    <span class="sprice">${fR(s.preco)}/kg</span>
+                    ${difStr}
+                </div>`;
+            });
         }
+        localList.forEach((s,i)=>{
+            content+=`<div class="sup-cat-item ${s.ativo?'active':''}">
+                <span class="sname">${s.nome}</span>
+                <span class="sprice">${fR(s.preco)}/kg</span>
+                ${s.ativo?'<span class="sbadge">Ativo</span>':''}
+                <button class="btn-del" onclick="removeSupFromCatalog('${esc(key)}',${i})" title="Remover">&#10005;</button>
+            </div>`;
+        });
+        if(!sheetsList.length&&!localList.length){
+            content+=`<div style="padding:6px 12px;font-size:11px;color:var(--mut);font-style:italic">Nenhum fornecedor cadastrado. Preencha na planilha Google Sheets ou cadastre pelo botão Editar.</div>`;
+        }
+        content+='</div>';
+    } else if(supTabActive==='todos'){
+        const sc=_sheetsCache||{fios:{},tecelagem:{},tinturaria:{}};
+        content='<div class="sup-cat">';
+        const fioKeys=Object.keys(sc.fios||{}).sort();
+        if(fioKeys.length>0){
+            content+=`<div style="padding:8px 12px;background:#e8f0fe;font-weight:700;color:#1a73e8;font-size:13px;border-bottom:1px solid #d0d0d0">🧶 FIOS — ${fioKeys.length} tipos com fornecedor</div>`;
+            fioKeys.forEach(fioName=>{
+                const list=sc.fios[fioName];
+                const refPrice=ALL_FIOS[fioName]||0;
+                content+=`<div style="padding:4px 12px 2px;font-size:11px;font-weight:700;color:#1a1a2e;margin-top:6px">${fioName} <span style="font-weight:400;color:var(--mut)">${refPrice>0?'Site: '+fR(refPrice)+'/kg':''}</span></div>`;
+                list.forEach(s=>{
+                    const dif=refPrice>0?((s.preco-refPrice)/refPrice*100):0;
+                    const difStr=dif!==0?(dif>0?`<span style="color:#c62828;font-size:10px">+${fB(dif,1)}%</span>`:`<span style="color:#009624;font-size:10px">${fB(dif,1)}%</span>`):'';
+                    content+=`<div class="sup-cat-item" style="background:#f3e8fd;margin:2px 12px;border-radius:6px">
+                        <span style="color:#7b1fa2;font-size:11px">📊</span>
+                        <span class="sname">${s.nome}</span>
+                        <span class="sprice">${fR(s.preco)}/kg</span>${difStr}
+                    </div>`;
+                });
+            });
+        }
+        const tecKeys=Object.keys(sc.tecelagem||{}).sort();
+        if(tecKeys.length>0){
+            content+=`<div style="padding:8px 12px;background:#e6f7ed;font-weight:700;color:#009624;font-size:13px;border-bottom:1px solid #d0d0d0;margin-top:8px">⚙️ TECELAGEM — ${tecKeys.length} artigos com fornecedor</div>`;
+            tecKeys.forEach(art=>{
+                const list=sc.tecelagem[art];const cor=art.includes('BRANCO')?'BRANCO':'PRETO';
+                const cb=`<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;${cor==='PRETO'?'background:#333;color:#fff':'background:#f0f0f0;color:#333'}">${cor}</span>`;
+                content+=`<div style="padding:3px 12px;font-size:10px;font-weight:600;color:#1a1a2e;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${art.substring(0,55)}… ${cb}</div>`;
+                list.forEach(s=>{content+=`<div class="sup-cat-item" style="background:#f3e8fd;margin:2px 12px;border-radius:6px"><span style="color:#7b1fa2;font-size:11px">📊</span><span class="sname">${s.nome}</span><span class="sprice">${fR(s.preco)}/kg</span></div>`;});
+            });
+        }
+        const tintKeys=Object.keys(sc.tinturaria||{}).sort();
+        if(tintKeys.length>0){
+            content+=`<div style="padding:8px 12px;background:#fef3e2;font-weight:700;color:#e65100;font-size:13px;border-bottom:1px solid #d0d0d0;margin-top:8px">🎨 TINTURARIA — ${tintKeys.length} artigos com fornecedor</div>`;
+            tintKeys.forEach(art=>{
+                const list=sc.tinturaria[art];const cor=art.includes('BRANCO')?'BRANCO':'PRETO';
+                const cb=`<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;${cor==='PRETO'?'background:#333;color:#fff':'background:#f0f0f0;color:#333'}">${cor}</span>`;
+                content+=`<div style="padding:3px 12px;font-size:10px;font-weight:600;color:#1a1a2e;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${art.substring(0,55)}… ${cb}</div>`;
+                list.forEach(s=>{content+=`<div class="sup-cat-item" style="background:#f3e8fd;margin:2px 12px;border-radius:6px"><span style="color:#7b1fa2;font-size:11px">📊</span><span class="sname">${s.nome}</span><span class="sprice">${fR(s.preco)}/kg</span></div>`;});
+            });
+        }
+        if(!fioKeys.length&&!tecKeys.length&&!tintKeys.length){
+            content+=`<div class="sup-empty">Nenhum fornecedor com preço na planilha ainda.<br><br>
+                <a href="https://docs.google.com/spreadsheets/d/1u2y-9yH2qQX290y98bGA6GNLysf_fP-dT8Nzl40MZ3M/edit" target="_blank" style="color:#7b1fa2;font-weight:600;text-decoration:none">📊 Abrir Planilha para preencher →</a></div>`;
+        }
+        content+='</div>';
     }
     document.getElementById('supContent').innerHTML=content;
 }
