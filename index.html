@@ -158,7 +158,9 @@ select:focus{border-color:var(--pri)}
 .grade-cell .gc-tam{font-size:11px;font-weight:700;color:var(--mut);margin-bottom:2px}
 .grade-cell .gc-qty{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--txt)}
 .grade-cell .gc-pct{font-size:10px;color:var(--mut)}
-.grade-cell input{width:100%;text-align:center;font-family:'Space Mono',monospace;font-size:14px;font-weight:700;border:1.5px solid var(--pri);border-radius:4px;padding:2px;color:var(--pri)}
+.grade-cell input{width:100%;text-align:center;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;border:1.5px solid var(--pri);border-radius:4px;padding:2px;color:var(--pri)}
+.grade-cell input.qty-input{border-color:#7b1fa2;color:#7b1fa2;font-size:12px}
+.grade-cell .gc-label{font-size:8px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
 .plano-kpi{background:#fafbfc;border:1.5px solid var(--brd);border-radius:8px;padding:10px 8px;text-align:center}
 .plano-kpi .pk-val{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;margin-bottom:2px}
 .plano-kpi .pk-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
@@ -173,7 +175,7 @@ select:focus{border-color:var(--pri)}
 <body>
 <div class="top-bar">
     <h1>&#129526; Malha Calc</h1>
-    <div class="sub"><small>Custo de Malha Produzida &amp; Plano Comercial</small><button id="btnCheck" onclick="checkUpdates()" style="background:none;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;margin-left:8px">🔄 Verificar</button><span class="badge badge-live" id="badgeS">CONECTADO</span></div>
+    <div class="sub"><small>Custo de Malha Produzida &amp; Plano Comercial</small><button id="btnCheck" onclick="checkUpdates()" style="background:none;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;margin-left:8px;margin-right:10px">🔄 Verificar</button><span class="badge badge-live" id="badgeS">CONECTADO</span></div>
 </div>
 <div class="container">
     <div class="card">
@@ -1061,6 +1063,8 @@ const CORRETAGEM = 0.10;
 let PV_ECOM = 199.90;
 let PV_OUTLET = 199.90;
 let PV_ATAC = 99.90;
+let ALIQ_ECOM = 11.12;  // Simples Anexo I - Faixa 6 (comércio, alíquota efetiva máxima)
+let ALIQ_OUTLET = 11.12;
 
 let _planoState = null;
 let _gradeEditing = false;
@@ -1183,13 +1187,13 @@ function calcPlano() {
     const pvE1 = custoMedPond * (1 + MARKUP_E1);
     const tribE1 = pvE1 * TRIB_E1_PCT;
 
-    // Simples - E-commerce (estimativa faixa 3: ~8.28%)
-    const aeEcom = 0.0828;
+    // Simples - E-commerce (Anexo I Comércio)
+    const aeEcom = ALIQ_ECOM / 100;
     const dasEcom = PV_ECOM * aeEcom;
     const lucroEcom = PV_ECOM - pvE1 - dasEcom;
 
-    // Simples - Outlet (faixa 1: 4%)
-    const aeOutlet = 0.04;
+    // Simples - Outlet (Anexo I Comércio)
+    const aeOutlet = ALIQ_OUTLET / 100;
     const dasOutlet = PV_OUTLET * aeOutlet;
     const lucroOutlet = PV_OUTLET - pvE1 - dasOutlet;
 
@@ -1228,8 +1232,10 @@ function renderPlano() {
         const qty = Math.round(r.pecasDoKg * g.grade[t] / 100);
         if (_gradeEditing) {
             gradeH += `<div class="grade-cell"><div class="gc-tam">${t}</div>
-                <input type="number" min="0" max="100" value="${g.grade[t]}" onchange="updateGrade('${t}',this.value)" id="grade_${t}">
-                <div class="gc-pct">${qty} pçs</div></div>`;
+                <input type="number" min="0" max="100" value="${g.grade[t]}" onchange="updateGrade('${t}',this.value,'pct')" id="grade_${t}">
+                <div class="gc-label">%</div>
+                <input type="number" min="0" class="qty-input" value="${qty}" onchange="updateGrade('${t}',this.value,'qty')" id="gradeqty_${t}">
+                <div class="gc-label">pçs</div></div>`;
         } else {
             gradeH += `<div class="grade-cell"><div class="gc-tam">${t}</div>
                 <div class="gc-qty">${g.grade[t]}%</div>
@@ -1322,12 +1328,12 @@ function renderPlano() {
 
     cdH += `<div class="plano-row emp" style="margin-top:8px"><span class="plbl">EMP.2 — Simples (E-commerce)</span><span class="pval">R$ ${fB(PV_ECOM)}</span></div>`;
     cdH += `<div class="plano-row"><span class="plbl">(-) Compra Emp.1</span><span class="pval">${fR(r.pvE1)}</span></div>`;
-    cdH += `<div class="plano-row"><span class="plbl">(-) DAS Simples (~${fB(r.aeEcom*100,1)}%)</span><span class="pval orange">${fR(r.dasEcom)}</span></div>`;
+    cdH += `<div class="plano-row"><span class="plbl">(-) DAS Simples <input type="number" step="0.01" min="0" max="20" value="${fB(ALIQ_ECOM,2)}" onchange="ALIQ_ECOM=parseFloat(this.value)||0;calcPlano()" style="width:52px;text-align:center;font-family:'Space Mono',monospace;font-size:11px;border:1px solid var(--brd);border-radius:3px;padding:1px 3px;color:var(--pri);font-weight:700">%</span><span class="pval orange">${fR(r.dasEcom)}</span></div>`;
     cdH += `<div class="plano-row"><span class="plbl">(=) Lucro E-commerce / peça</span><span class="pval green">${fR(r.lucroEcom)}</span></div>`;
 
     cdH += `<div class="plano-row emp" style="margin-top:8px"><span class="plbl">EMP.3 — Simples (Outlet)</span><span class="pval">R$ ${fB(PV_OUTLET)}</span></div>`;
     cdH += `<div class="plano-row"><span class="plbl">(-) Compra Emp.1</span><span class="pval">${fR(r.pvE1)}</span></div>`;
-    cdH += `<div class="plano-row"><span class="plbl">(-) DAS Simples (${fB(r.aeOutlet*100,1)}%)</span><span class="pval orange">${fR(r.dasOutlet)}</span></div>`;
+    cdH += `<div class="plano-row"><span class="plbl">(-) DAS Simples <input type="number" step="0.01" min="0" max="20" value="${fB(ALIQ_OUTLET,2)}" onchange="ALIQ_OUTLET=parseFloat(this.value)||0;calcPlano()" style="width:52px;text-align:center;font-family:'Space Mono',monospace;font-size:11px;border:1px solid var(--brd);border-radius:3px;padding:1px 3px;color:var(--pri);font-weight:700">%</span><span class="pval orange">${fR(r.dasOutlet)}</span></div>`;
     cdH += `<div class="plano-row"><span class="plbl">(=) Lucro Outlet / peça</span><span class="pval green">${fR(r.lucroOutlet)}</span></div>`;
 
     cdH += `<div class="plano-row emp" style="margin-top:8px"><span class="plbl">ATACADO (Emp.1 direto)</span><span class="pval">R$ ${fB(PV_ATAC)}</span></div>`;
@@ -1360,8 +1366,26 @@ function toggleGradeEdit() {
     if (!_gradeEditing) calcPlano(); else renderPlano();
 }
 
-function updateGrade(tam, val) {
-    _planoState.garment.grade[tam] = Math.max(0, Math.min(100, parseInt(val)||0));
+function updateGrade(tam, val, mode) {
+    const s = _planoState;
+    if (!s || !s.results) return;
+    if (mode === 'qty') {
+        // Convert qty to pct: qty / totalPecas * 100
+        const totalPecas = s.results.pecasDoKg;
+        if (totalPecas > 0) {
+            const pct = Math.round((parseInt(val)||0) / totalPecas * 100);
+            s.garment.grade[tam] = Math.max(0, Math.min(100, pct));
+            const pctInput = document.getElementById('grade_'+tam);
+            if (pctInput) pctInput.value = s.garment.grade[tam];
+        }
+    } else {
+        s.garment.grade[tam] = Math.max(0, Math.min(100, parseInt(val)||0));
+        // Update qty field
+        const qtyInput = document.getElementById('gradeqty_'+tam);
+        if (qtyInput && s.results.pecasDoKg) {
+            qtyInput.value = Math.round(s.results.pecasDoKg * s.garment.grade[tam] / 100);
+        }
+    }
 }
 
 function toggleCostEdit() {
