@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Calculadora de Malhas</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+:root{--bg:#f0f2f5;--card:#fff;--pri:#1a73e8;--pri-d:#1557b0;--ok:#00c853;--ok-d:#009624;--err:#e53935;--txt:#1a1a2e;--mut:#6b7280;--brd:#e2e8f0;--sh:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.04);--sh2:0 4px 20px rgba(0,0,0,.12);--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;-webkit-font-smoothing:antialiased}
+.top-bar{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.top-bar h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.top-bar .sub{display:flex;justify-content:space-between;align-items:center}
+.top-bar small{font-size:12px;opacity:.7}
+.badge{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;letter-spacing:.5px;display:inline-flex;align-items:center;gap:4px}
+.badge-live{background:#00c853;color:#fff}.badge-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.5s infinite}
+.badge-off{background:#ff9800;color:#fff}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.container{max-width:820px;margin:0 auto;padding:16px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 20px 10px;border-bottom:1px solid var(--brd);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);display:flex;align-items:center;gap:8px;justify-content:space-between}
+.card-header .left{display:flex;align-items:center;gap:8px}
+.ico{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.ico.blue{background:#e8f0fe;color:var(--pri)}.ico.green{background:#e6f7ed;color:var(--ok-d)}.ico.orange{background:#fef3e2;color:#e65100}.ico.purple{background:#f3e8fd;color:#7b1fa2}
+.card-body{padding:16px 20px 20px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+input[type="text"],input[type="number"]{width:100%;padding:10px 12px;border:1.5px solid var(--brd);border-radius:var(--rs);font-family:inherit;font-size:14px;color:var(--txt);background:#fafbfc;transition:all .2s;outline:none}
+input:focus{border-color:var(--pri);background:#fff;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+select{width:100%;padding:8px 10px;border:1.5px solid var(--brd);border-radius:6px;font-family:inherit;font-size:13px;color:var(--txt);background:#fff;outline:none;cursor:pointer}
+select:focus{border-color:var(--pri)}
+.fg{margin-bottom:14px}
+.row{display:grid;gap:12px}.r2{grid-template-columns:1fr 1fr}
+@media(max-width:600px){.r2,.row-eco{grid-template-columns:1fr!important}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 28px;border:none;border-radius:var(--rs);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;width:100%}
+.btn-p{background:var(--pri);color:#fff}.btn-p:hover{background:var(--pri-d);transform:translateY(-1px);box-shadow:var(--sh2)}.btn-p:disabled{background:#94a3b8;cursor:wait;transform:none}
+.btn-sm{padding:6px 14px;font-size:12px;width:auto;border-radius:6px}
+.btn-c{background:none;border:1.5px solid var(--brd);color:var(--mut);padding:8px 12px;font-size:13px;width:auto;cursor:pointer;border-radius:var(--rs)}.btn-c:hover{border-color:var(--err);color:var(--err)}
+.btn-arrow{background:var(--pri);color:#fff;border:none;border-radius:var(--rs);padding:8px 12px;font-size:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;min-width:40px;justify-content:center}.btn-arrow:hover{background:var(--pri-d)}
+.btn-arrow .arr{display:inline-block;transition:transform .2s}.btn-arrow.open .arr{transform:rotate(180deg)}
+.btn-edit{background:#e8f0fe;color:var(--pri);border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.3px;font-family:inherit}.btn-edit:hover{background:#d2e3fc}
+.btn-save{background:var(--ok);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;font-family:inherit}.btn-save:hover{background:var(--ok-d)}
+.btn-cancel{background:none;border:1px solid var(--brd);color:var(--mut);padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;font-family:inherit}.btn-cancel:hover{border-color:var(--err);color:var(--err)}
+.btn-add{background:none;border:1.5px dashed var(--pri);color:var(--pri);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}.btn-add:hover{background:#e8f0fe}
+.btn-del{background:none;border:none;color:var(--err);font-size:14px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1}.btn-del:hover{background:#fef2f2}
+.sw{position:relative}.sir{display:flex;gap:8px}.sir input{flex:1}
+.acl{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--brd);border-radius:var(--rs);max-height:60vh;overflow-y:auto;z-index:50;box-shadow:var(--sh2);display:none}
+.acl.show{display:block}
+.aci{padding:11px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f3f4f6;transition:background .15s}
+.aci:last-child{border-bottom:none}.aci:hover{background:#e8f0fe}
+.rv{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--ok-d);padding:10px 12px;background:#f0faf4;border-radius:var(--rs);border:1.5px solid #c8e6c9;text-align:center}
+.rv.neg{color:var(--err);background:#fef2f2;border-color:#fecaca}
+.rl{text-align:center;font-size:11px;margin-bottom:6px}
+.row-eco{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.comp{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.comp{grid-template-columns:1fr}}
+.cc{padding:14px;border-radius:var(--rs);text-align:center}
+.cc.b{background:#fef2f2;border:1.5px solid #fecaca}.cc.p{background:#f0faf4;border:1.5px solid #c8e6c9}
+.cl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.cc.b .cl{color:var(--err)}.cc.p .cl{color:var(--ok-d)}
+.cv{font-family:'Space Mono',monospace;font-size:20px;font-weight:700}
+.cs{font-size:12px;color:var(--mut);margin-top:4px}
+/* Cost section */
+.cost-item{border-bottom:1px solid #f3f4f6;padding:12px 16px}
+.cost-item:last-child{border-bottom:none}
+.cost-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.cost-item-title{font-size:13px;font-weight:700;color:var(--txt)}
+.cost-item-val{font-family:'Space Mono',monospace;font-weight:700;font-size:14px;color:var(--ok-d)}
+.cost-item-sub{font-size:12px;color:var(--mut);margin-top:2px}
+.cost-forn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--pri);background:#e8f0fe;padding:2px 8px;border-radius:4px;margin-top:4px;font-weight:600}
+.cost-forn-list{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+.cost-forn-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 8px;border-radius:6px;background:#fafbfc;border:1px solid #f0f0f0}
+.cost-forn-item.active{background:#e8f0fe;border-color:var(--pri)}
+.cost-forn-item .fname{flex:1;font-weight:600}
+.cost-forn-item .fprice{font-family:'Space Mono',monospace;font-weight:600;font-size:11px}
+.cost-forn-item input[type="radio"]{accent-color:var(--pri)}
+/* Edit inputs */
+.edit-row{display:flex;gap:6px;align-items:center;margin-top:4px}
+.edit-row input{padding:6px 8px;font-size:12px;border:1.5px solid var(--brd);border-radius:6px;font-family:inherit}
+.edit-row input.fn{flex:2;min-width:0}
+.edit-row input.fp{flex:1;min-width:0;font-family:'Space Mono',monospace;text-align:right}
+.edit-row input.fpc{width:50px;font-family:'Space Mono',monospace;text-align:center}
+.cost-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);padding:10px 16px 6px;border-bottom:1px solid var(--brd)}
+.cost-total{padding:14px 16px;background:#e8f0fe;display:flex;justify-content:space-between;align-items:center}
+.cost-total .lbl{font-size:14px;font-weight:700;color:var(--pri)}
+.cost-total .val{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--pri)}
+.cost-quebra{padding:10px 16px;background:#fff8e1;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#e65100;font-style:italic}
+.cost-subtotal{padding:10px 16px;background:#f8f9fa;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;border-top:2px solid var(--brd)}
+/* Chars grid */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.ci{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #f3f4f6}
+.ci:nth-child(odd){border-right:1px solid #f3f4f6}
+.ci .lbl{font-size:12px;color:var(--mut)}.ci .val{font-family:'Space Mono',monospace;font-weight:600;font-size:13px}
+@media(max-width:480px){.cg{grid-template-columns:1fr}.ci:nth-child(odd){border-right:none}}
+/* Modal */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.mo.show{display:flex}
+.mb{background:#fff;border-radius:var(--r);max-width:520px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mh{padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center}
+.mh h3{font-size:16px}
+.mx{background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);padding:4px 8px;border-radius:4px}.mx:hover{background:#f3f4f6}
+.mbd{padding:20px;line-height:1.7;font-size:14px}.mbd p{margin-bottom:10px}
+.ma{padding:12px 20px;border-top:1px solid var(--brd);display:flex;gap:8px;align-items:center}
+.ma .btn{width:auto;padding:8px 18px;font-size:13px}
+.cf{display:none;color:var(--ok-d);font-size:12px;font-weight:600}.cf.show{display:inline}
+.hidden{display:none!important}
+.loading-btn.loading::after{content:'';display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-left:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.3)}.toast.show{transform:translateX(-50%) translateY(0)}
+/* Collapsible supplier toggle */
+.forn-toggle{display:flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer;font-size:11px;font-weight:700;color:var(--pri);padding:4px 0;user-select:none}
+.forn-toggle .tarr{display:inline-block;transition:transform .2s;font-size:10px}.forn-toggle.open .tarr{transform:rotate(90deg)}
+.forn-toggle:hover{text-decoration:underline}
+.forn-panel{display:none;margin-top:4px}.forn-panel.open{display:block}
+/* Supplier catalog modal */
+.sup-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.sup-modal.show{display:flex}
+.sup-box{background:#fff;border-radius:var(--r);max-width:600px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.sup-header{padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.sup-header h3{font-size:16px;font-weight:700}
+.sup-tabs{display:flex;gap:0;padding:0 16px;border-bottom:1px solid var(--brd);background:#fafbfc}
+.sup-tab{padding:10px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--mut);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.sup-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
+.sup-tab:hover{color:var(--pri)}
+.sup-cat{padding:12px 16px}
+.sup-cat-title{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;padding:8px 0 4px;border-bottom:1px solid var(--brd);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sup-cat-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:#fafbfc;border:1px solid #f0f0f0;font-size:13px}
+.sup-cat-item.active{background:#e8f0fe;border-color:var(--pri)}
+.sup-cat-item .sname{flex:1;font-weight:600}
+.sup-cat-item .sprice{font-family:'Space Mono',monospace;font-weight:600;font-size:12px;color:var(--ok-d)}
+.sup-cat-item .sbadge{font-size:9px;background:var(--pri);color:#fff;padding:2px 6px;border-radius:4px;font-weight:700;text-transform:uppercase}
+.sup-empty{padding:16px;text-align:center;color:var(--mut);font-size:13px;font-style:italic}
+.btn-forn-cat{background:linear-gradient(135deg,#7b1fa2,#9c27b0);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.3px;font-family:inherit;display:inline-flex;align-items:center;gap:4px}.btn-forn-cat:hover{opacity:.9}
+    </style>
+</head>
+<body>
+<div class="top-bar">
+    <h1>&#129526; Calculadora de Malhas</h1>
+    <div class="sub"><small>Comparar Malha Comprada &times; Produzida</small><span class="badge badge-live" id="badgeS">AO VIVO</span></div>
+</div>
+<div class="container">
+    <div class="card">
+        <div class="card-header"><div class="left"><div class="ico blue">&#128269;</div>SIMULAÇÃO</div></div>
+        <div class="card-body">
+            <div class="fg sw">
+                <label>Artigo</label>
+                <div class="sir">
+                    <input type="text" id="campoPesquisa" placeholder="Pesquise o tipo da malha..." autocomplete="off" oninput="filtrarMalhas()">
+                    <button class="btn-arrow" id="btnSeta" onclick="toggleLista()"><span class="arr">&#9660;</span></button>
+                    <button class="btn-c" onclick="limparPesquisa()">&#10005;</button>
+                </div>
+                <div class="acl" id="acList"></div>
+                <input type="hidden" id="inputArtigo">
+            </div>
+            <div class="row r2">
+                <div class="fg"><label>Quantidade mensal (kg)</label><input type="number" id="inputQtde" min="1" value="300"></div>
+                <div class="fg"><label>Valor 1 Kg comprada (R$)</label><input type="number" id="inputValor" step="0.01" min="0.01" placeholder="Preço do Kg"></div>
+            </div>
+            <button class="btn btn-p loading-btn" id="btnCalc" onclick="calcular()">&#9889; Calcular</button>
+        </div>
+    </div>
+    <div class="card hidden" id="cRes">
+        <div class="card-header"><div class="left"><div class="ico green">&#128202;</div>RESULTADO</div></div>
+        <div class="card-body">
+            <div style="margin-bottom:10px"><div style="font-size:12px;color:var(--mut)">Artigo selecionado</div><div style="font-weight:700;font-size:14px" id="resArt"></div></div>
+            <div class="comp" style="margin-bottom:14px">
+                <div class="cc b"><div class="cl">Malha Comprada</div><div class="cv" id="rCK">–</div><div class="cs">por kg</div><div style="margin-top:6px;font-family:'Space Mono',monospace;font-size:13px;font-weight:600" id="rCT">–</div><div class="cs" id="rCL">total mensal</div></div>
+                <div class="cc p"><div class="cl">Malha Produzida</div><div class="cv" id="rPK">–</div><div class="cs">por kg</div><div style="margin-top:6px;font-family:'Space Mono',monospace;font-size:13px;font-weight:600" id="rPT">–</div><div class="cs" id="rPL">total mensal</div></div>
+            </div>
+            <div class="row-eco">
+                <div><label class="rl">% Economia</label><div class="rv" id="rDif">–</div></div>
+                <div><label class="rl">Economia / Kg</label><div class="rv" id="rEK">–</div></div>
+                <div><label class="rl">Economia Mensal</label><div class="rv" id="rEM">–</div></div>
+            </div>
+            <div style="text-align:center;margin-top:10px"><button class="btn btn-p btn-sm" onclick="abrirModal()">&#128203; Ver Resumo</button></div>
+        </div>
+    </div>
+    <!-- PLANILHA DE CUSTO -->
+    <div class="card hidden" id="cPlan">
+        <div class="card-header">
+            <div class="left"><div class="ico purple">&#128209;</div>PLANILHA DE CUSTO</div>
+            <div id="editBtns" style="display:flex;gap:6px">
+                <button class="btn-forn-cat" onclick="abrirFornecedores()">&#128666; Fornecedores</button>
+                <button class="btn-edit" onclick="toggleEdit()">&#9998; Editar</button>
+            </div>
+        </div>
+        <div class="card-body" style="padding:0">
+            <div class="cg" id="charGrid"></div>
+            <div id="costContent"></div>
+        </div>
+    </div>
+    <!-- LEGENDA -->
+    <div class="card" style="margin-top:8px">
+        <div class="card-header" style="cursor:pointer" onclick="document.getElementById('legendBody').classList.toggle('hidden')">
+            <div class="left"><div class="ico" style="background:#f3e8fd;color:#7b1fa2">&#128214;</div>LEGENDA DE ABREVIAÇÕES</div>
+            <span style="font-size:12px;color:var(--mut)">toque para expandir ▼</span>
+        </div>
+        <div class="card-body hidden" id="legendBody" style="padding:12px 16px;font-size:12px;line-height:1.8">
+            <div style="font-weight:700;color:var(--pri);margin-bottom:4px">Tipos de Fiação</div>
+            <b>O.E.</b> = Open End (fiação por rotor, mais econômica)<br>
+            <b>PENT.</b> = Penteado (fio mais uniforme e resistente)<br>
+            <b>CONV.</b> = Convencional (fiação por anel, processo tradicional)<br>
+            <b>VORTEX</b> = Fiação a jato de ar (qualidade entre O.E. e penteado)<br>
+            <div style="font-weight:700;color:var(--pri);margin-top:8px;margin-bottom:4px">Composição da Fibra</div>
+            <b>PA 50/50</b> = Poliéster/Algodão (50%/50%)<br>
+            <b>PES</b> = Poliéster 100%<br>
+            <b>PV</b> = Poliéster/Viscose<br>
+            <div style="font-weight:700;color:var(--pri);margin-top:8px;margin-bottom:4px">Acabamento</div>
+            <b>TX.</b> = Texturizado (mais volume e elasticidade)<br>
+            <b>AR</b> = Texturização por jato de ar<br>
+            <b>LISO</b> = Filamento reto, sem texturização<br>
+            <b>FIADO</b> = Fibra cortada (diferente do filamento contínuo)<br>
+            <div style="font-weight:700;color:var(--pri);margin-top:8px;margin-bottom:4px">Titulação</div>
+            <b>30/1, 40/1...</b> = Título Ne — quanto maior, mais fino<br>
+            <b>75/36, 150/144...</b> = Denier/Filamentos (sintéticos)<br>
+            <b>ELASTANO 20, 30...</b> = Denier do elastano<br>
+            <div style="font-weight:700;color:var(--pri);margin-top:8px;margin-bottom:4px">Cor</div>
+            <b>PRETO / T. PRETO</b> = Fio tinto de preto na fiação (custo maior)
+        </div>
+    </div>
+</div>
+<div class="sup-modal" id="supModal" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="sup-box" onclick="event.stopPropagation()">
+        <div class="sup-header"><h3>&#128666; Fornecedores Cadastrados</h3><button class="mx" onclick="document.getElementById('supModal').classList.remove('show')">&times;</button></div>
+        <div class="sup-tabs" id="supTabs"></div>
+        <div id="supContent"></div>
+    </div>
+</div>
+<div class="mo" id="modal" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="mb" onclick="event.stopPropagation()">
+        <div class="mh"><h3>Resultado da Simulação</h3><button class="mx" onclick="document.getElementById('modal').classList.remove('show')">&times;</button></div>
+        <div class="mbd" id="mBody"></div>
+        <div class="ma"><button class="btn btn-p btn-sm" onclick="copiar()">&#128203; Copiar</button><span class="cf" id="cfb">&#10003; Copiado!</span></div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const _FB=[{"id":151,"nome":"ALGODÃO - MALHA 24/1  O.E. (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 24/1 O.E.","preco":16.1,"pct":100,"final":16.1}],"malharia":1.9,"tingir":4,"quebra":8,"custoProduzida":23.76},{"id":152,"nome":"ALGODÃO - MALHA 24/1  O.E. (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 24/1 O.E.","preco":16.1,"pct":100,"final":16.1}],"malharia":1.9,"tingir":10,"quebra":8,"custoProduzida":30.24},{"id":31,"nome":"ALGODÃO - MALHA 26/1 PENT. (1,20 m x 175 g/m2) - BRANCO","largura":1.2,"gramatura":175,"rendimento":2.38,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 26/1 PENT.","preco":22.3,"pct":100,"final":22.3}],"malharia":1.9,"tingir":4,"quebra":8,"custoProduzida":30.46},{"id":32,"nome":"ALGODÃO - MALHA 26/1 PENT. (1,20 m x 175 g/m2) - PRETO","largura":1.2,"gramatura":175,"rendimento":2.38,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 26/1 PENT.","preco":22.3,"pct":100,"final":22.3}],"malharia":1.9,"tingir":10,"quebra":8,"custoProduzida":36.94},{"id":37,"nome":"ALGODÃO - MALHA 30/1 \"MISTA\" (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":50,"final":11.4},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":50,"final":8.45}],"malharia":1.9,"tingir":4,"quebra":8,"custoProduzida":27.81},{"id":38,"nome":"ALGODÃO - MALHA 30/1 \"MISTA\" (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":50,"final":11.4},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":50,"final":8.45}],"malharia":1.9,"tingir":10,"quebra":8,"custoProduzida":34.29},{"id":39,"nome":"ALGODÃO - MALHA 30/1 LENÇOL \"MISTA\" (1,38 m x 135 g/m2) - BRANCO","largura":1.38,"gramatura":135,"rendimento":2.68,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":50,"final":11.4},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":50,"final":8.45}],"malharia":1.9,"tingir":4,"quebra":8,"custoProduzida":27.81},{"id":40,"nome":"ALGODÃO - MALHA 30/1 LENÇOL \"MISTA\" (1,38 m x 135 g/m2) - PRETO","largura":1.38,"gramatura":135,"rendimento":2.68,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":50,"final":11.4},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":50,"final":8.45}],"malharia":1.9,"tingir":10,"quebra":8,"custoProduzida":34.29},{"id":33,"nome":"ALGODÃO - MALHA 30/1 O.E. (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":100,"final":16.9}],"malharia":1.9,"tingir":4,"quebra":8,"custoProduzida":24.62},{"id":34,"nome":"ALGODÃO - MALHA 30/1 O.E. (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":100,"final":16.9}],"malharia":1.9,"tingir":10,"quebra":8,"custoProduzida":31.1},{"id":35,"nome":"ALGODÃO - MALHA 30/1 PENT. (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":100,"final":22.8}],"malharia":1.9,"tingir":4,"quebra":8,"custoProduzida":31},{"id":36,"nome":"ALGODÃO - MALHA 30/1 PENT. (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":100,"final":22.8}],"malharia":1.9,"tingir":10,"quebra":8,"custoProduzida":37.48},{"id":107,"nome":"ALGODÃO - SUEDINE (0,90 m x 190 g/m2) - BRANCO","largura":0.9,"gramatura":190,"rendimento":2.92,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":100,"final":22.8}],"malharia":3.6,"tingir":4,"quebra":8,"custoProduzida":32.83},{"id":108,"nome":"ALGODÃO - SUEDINE (0,90 m x 190 g/m2) - PRETO","largura":0.9,"gramatura":190,"rendimento":2.92,"acabamento":"Tubular","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":100,"final":22.8}],"malharia":3.6,"tingir":10,"quebra":8,"custoProduzida":39.31},{"id":17,"nome":"COTTON 30/1 ALGODÃO \"MISTO\" + 4%  ELASTANO (1,72 m x 195 g/m2) - BRANCO","largura":1.72,"gramatura":195,"rendimento":2.98,"acabamento":"Ramado","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":48,"final":10.94},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":48,"final":8.11},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.6,"tingir":6.78,"quebra":8,"custoProduzida":30.89},{"id":18,"nome":"COTTON 30/1 ALGODÃO \"MISTO\" + 4%  ELASTANO (1,72 m x 195 g/m2) - PRETO","largura":1.72,"gramatura":195,"rendimento":2.98,"acabamento":"Ramado","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":48,"final":10.94},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":48,"final":8.11},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.6,"tingir":12.78,"quebra":8,"custoProduzida":37.37},{"id":15,"nome":"COTTON 30/1 ALGODÃO O.E. + 4%  ELASTANO (1,72 m x 195 g/m2) - BRANCO","largura":1.72,"gramatura":195,"rendimento":2.98,"acabamento":"Ramado","fios":[{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":96,"final":16.22},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.6,"tingir":6.78,"quebra":8,"custoProduzida":27.83},{"id":16,"nome":"COTTON 30/1 ALGODÃO O.E. + 4%  ELASTANO (1,72 m x 195 g/m2) - PRETO","largura":1.72,"gramatura":195,"rendimento":2.98,"acabamento":"Ramado","fios":[{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":96,"final":16.22},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.6,"tingir":12.78,"quebra":8,"custoProduzida":34.31},{"id":13,"nome":"COTTON 30/1 ALGODÃO PENT. + 4%  ELASTANO (1,72 m x 195 g/m2) - BRANCO","largura":1.72,"gramatura":195,"rendimento":2.98,"acabamento":"Ramado","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":96,"final":21.89},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.6,"tingir":6.78,"quebra":8,"custoProduzida":33.95},{"id":14,"nome":"COTTON 30/1 ALGODÃO PENT. + 4%  ELASTANO (1,72 m x 195 g/m2) - PRETO","largura":1.72,"gramatura":195,"rendimento":2.98,"acabamento":"Ramado","fios":[{"titulo":"ALGODÃO - 30/1 PENT.","preco":22.8,"pct":96,"final":21.89},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.6,"tingir":12.78,"quebra":8,"custoProduzida":40.43},{"id":111,"nome":"ESPORTIVO POLIESTER -   GRÃO DE ARROZ (1,80 m x 145 g/m2) - BRANCO","largura":1.8,"gramatura":145,"rendimento":3.83,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":100,"final":9.35}],"malharia":4.6,"tingir":6.08,"quebra":4,"custoProduzida":20.83},{"id":112,"nome":"ESPORTIVO POLIESTER -   GRÃO DE ARROZ (1,80 m x 145 g/m2) - T. PRETO","largura":1.8,"gramatura":145,"rendimento":3.83,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":100,"final":11.9}],"malharia":4.6,"tingir":6.08,"quebra":4,"custoProduzida":23.48},{"id":117,"nome":"ESPORTIVO POLIESTER -  COLMÉIA 3X3 (1,80 m x 130 g/m2) - BRANCO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":5.6,"tingir":6.08,"quebra":4,"custoProduzida":22.34},{"id":118,"nome":"ESPORTIVO POLIESTER -  COLMÉIA 3X3 (1,80 m x 130 g/m2) - T. PRETO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":5.6,"tingir":6.08,"quebra":4,"custoProduzida":24.63},{"id":115,"nome":"ESPORTIVO POLIESTER -  COLMÉIA FLOR (1,80 m x 145 g/m2) - BRANCO","largura":1.8,"gramatura":145,"rendimento":3.83,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":100,"final":9.35}],"malharia":4.6,"tingir":6.08,"quebra":4,"custoProduzida":20.83},{"id":116,"nome":"ESPORTIVO POLIESTER -  COLMÉIA FLOR (1,80 m x 145 g/m2) - T. PRETO","largura":1.8,"gramatura":145,"rendimento":3.83,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":100,"final":11.9}],"malharia":4.6,"tingir":6.08,"quebra":4,"custoProduzida":23.48},{"id":113,"nome":"ESPORTIVO POLIESTER -  GRÃO DE ARROZ (1,80 m x 130 g/m2) - BRANCO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":5.6,"tingir":6.08,"quebra":4,"custoProduzida":22.34},{"id":114,"nome":"ESPORTIVO POLIESTER -  GRÃO DE ARROZ (1,80 m x 130 g/m2) - T. PRETO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":5.6,"tingir":6.08,"quebra":4,"custoProduzida":24.63},{"id":119,"nome":"ESPORTIVO POLIESTER -  QUADRICULADO (1,80 m x 130 g/m2) - BRANCO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":96,"final":8.98},{"titulo":"PES - 50/24 LISO","preco":11,"pct":4,"final":0.44}],"malharia":5.6,"tingir":6.08,"quebra":4,"custoProduzida":21.94},{"id":120,"nome":"ESPORTIVO POLIESTER -  QUADRICULADO (1,80 m x 130 g/m2) - T. PRETO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":96,"final":11.42},{"titulo":"PES - 50/24 LISO","preco":11,"pct":4,"final":0.44}],"malharia":5.6,"tingir":6.08,"quebra":4,"custoProduzida":24.49},{"id":121,"nome":"ESPORTIVO POLIESTER -  TELINHA TUB. (0,90 m x 110 g/m2) - BRANCO","largura":0.9,"gramatura":110,"rendimento":5.05,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":96,"final":8.74},{"titulo":"PES - 50/24 LISO","preco":11,"pct":4,"final":0.44}],"malharia":5.6,"tingir":4,"quebra":3,"custoProduzida":19.34},{"id":122,"nome":"ESPORTIVO POLIESTER -  TELINHA TUB. (0,90 m x 110 g/m2) - T. PRETO","largura":0.9,"gramatura":110,"rendimento":5.05,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":96,"final":10.37},{"titulo":"PES - 50/24 LISO","preco":11,"pct":4,"final":0.44}],"malharia":5.6,"tingir":4,"quebra":3,"custoProduzida":21.02},{"id":109,"nome":"ESPORTIVO POLIESTER - DRY FIT (1,80 m x 130 g/m2) - BRANCO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.47},{"id":110,"nome":"ESPORTIVO POLIESTER - DRY FIT (1,80 m x 130 g/m2) - T. PRETO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":22.76},{"id":133,"nome":"POLIAMIDA - BLACKOUT + 14%  ELASTANO (1,60 m x 300 g/m2) - BRANCO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":86,"final":20.81},{"titulo":"ELASTANO 40","preco":26.35,"pct":14,"final":3.69}],"malharia":5.8,"tingir":9.5,"quebra":8,"custoProduzida":42.99},{"id":134,"nome":"POLIAMIDA - BLACKOUT + 14%  ELASTANO (1,60 m x 300 g/m2) - T. PRETO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":86,"final":20.81},{"titulo":"ELASTANO 40","preco":26.35,"pct":14,"final":3.69}],"malharia":5.8,"tingir":12.6,"quebra":8,"custoProduzida":46.33},{"id":143,"nome":"POLIAMIDA - HELANCA TUB. (1,05 m x 260 g/m2) - BRANCO","largura":1.05,"gramatura":260,"rendimento":1.83,"acabamento":"Tubular","fios":[{"titulo":"POLIAMIDA - 2/70/24 TX.","preco":23.65,"pct":100,"final":23.65}],"malharia":2.4,"tingir":9.5,"quebra":7,"custoProduzida":38.04},{"id":144,"nome":"POLIAMIDA - HELANCA TUB. (1,05 m x 260 g/m2) - PRETO","largura":1.05,"gramatura":260,"rendimento":1.83,"acabamento":"Tubular","fios":[{"titulo":"POLIAMIDA - 2/70/24 TX.","preco":23.65,"pct":100,"final":23.65}],"malharia":2.4,"tingir":12.6,"quebra":7,"custoProduzida":41.36},{"id":67,"nome":"POLIAMIDA - LINGERIE + 10%  ELASTANO (1,60 m x 185 g/m2) - BRANCO","largura":1.6,"gramatura":185,"rendimento":3.38,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":9.5,"quebra":8,"custoProduzida":41.47},{"id":68,"nome":"POLIAMIDA - LINGERIE + 10%  ELASTANO (1,60 m x 185 g/m2) - PRETO","largura":1.6,"gramatura":185,"rendimento":3.38,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":12.6,"quebra":8,"custoProduzida":44.81},{"id":145,"nome":"POLIAMIDA - MALHA JAZZ + 15%  ELASTANO (1,60 m x 350 g/m2) - BRANCO","largura":1.6,"gramatura":350,"rendimento":1.78,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":85,"final":20.57},{"titulo":"ELASTANO 40","preco":26.35,"pct":15,"final":3.95}],"malharia":7.5,"tingir":9.5,"quebra":8,"custoProduzida":44.84},{"id":146,"nome":"POLIAMIDA - MALHA JAZZ + 15%  ELASTANO (1,60 m x 350 g/m2) - PRETO","largura":1.6,"gramatura":350,"rendimento":1.78,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":85,"final":20.57},{"titulo":"ELASTANO 40","preco":26.35,"pct":15,"final":3.95}],"malharia":7.5,"tingir":12.6,"quebra":8,"custoProduzida":48.19},{"id":147,"nome":"POLIAMIDA - MALHA TULIPA + 8%  ELASTANO (1,40 m x 300 g/m2) - BRANCO","largura":1.4,"gramatura":300,"rendimento":2.38,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":92,"final":22.26},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":4.8,"tingir":9.5,"quebra":8,"custoProduzida":41.77},{"id":148,"nome":"POLIAMIDA - MALHA TULIPA + 8%  ELASTANO (1,40 m x 300 g/m2) - PRETO","largura":1.4,"gramatura":300,"rendimento":2.38,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":92,"final":22.26},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":4.8,"tingir":12.6,"quebra":8,"custoProduzida":45.11},{"id":63,"nome":"POLIAMIDA - MICROFIBRA + 10%  ELASTANO (1,75 m x 170 g/m2) - BRANCO","largura":1.75,"gramatura":170,"rendimento":3.36,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":9.5,"quebra":8,"custoProduzida":41.47},{"id":64,"nome":"POLIAMIDA - MICROFIBRA + 10%  ELASTANO (1,75 m x 170 g/m2) - PRETO","largura":1.75,"gramatura":170,"rendimento":3.36,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":12.6,"quebra":8,"custoProduzida":44.81},{"id":137,"nome":"POLIAMIDA - MICROFIBRA RUNNING (1,80 m x 110 g/m2) - BRANCO","largura":1.8,"gramatura":110,"rendimento":5.05,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":100,"final":24.2}],"malharia":7.5,"tingir":9.5,"quebra":10,"custoProduzida":45.32},{"id":138,"nome":"POLIAMIDA - MICROFIBRA RUNNING (1,80 m x 110 g/m2) - PRETO","largura":1.8,"gramatura":110,"rendimento":5.05,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":100,"final":24.2}],"malharia":7.5,"tingir":12.6,"quebra":10,"custoProduzida":48.73},{"id":69,"nome":"POLIAMIDA - PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - BRANCO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":84,"final":20.33},{"titulo":"ELASTANO 40","preco":26.35,"pct":16,"final":4.22}],"malharia":4.5,"tingir":9.5,"quebra":8,"custoProduzida":41.63},{"id":70,"nome":"POLIAMIDA - PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - PRETO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":84,"final":20.33},{"titulo":"ELASTANO 40","preco":26.35,"pct":16,"final":4.22}],"malharia":4.5,"tingir":12.6,"quebra":8,"custoProduzida":44.98},{"id":65,"nome":"POLIAMIDA - PROTECÃO UV + 10%  ELASTANO (1,75 m x 170 g/m2) - BRANCO","largura":1.75,"gramatura":170,"rendimento":3.36,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":9.5,"quebra":8,"custoProduzida":41.47},{"id":66,"nome":"POLIAMIDA - PROTECÃO UV + 10%  ELASTANO (1,75 m x 170 g/m2) - PRETO","largura":1.75,"gramatura":170,"rendimento":3.36,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 1/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":12.6,"quebra":8,"custoProduzida":44.81},{"id":139,"nome":"POLIAMIDA - SUPLEX + 10%  ELASTANO (1,60 m x 300 g/m2) - BRANCO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 50","preco":26,"pct":10,"final":2.6}],"malharia":2.2,"tingir":9.5,"quebra":8,"custoProduzida":38.97},{"id":140,"nome":"POLIAMIDA - SUPLEX + 10%  ELASTANO (1,60 m x 300 g/m2) - PRETO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":90,"final":21.78},{"titulo":"ELASTANO 50","preco":26,"pct":10,"final":2.6}],"malharia":2.2,"tingir":12.6,"quebra":8,"custoProduzida":42.31},{"id":141,"nome":"POLIAMIDA - SUPLEX + 6,5%  ELASTANO (1,60 m x 230 g/m2) - BRANCO","largura":1.6,"gramatura":230,"rendimento":2.71,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":93,"final":22.51},{"titulo":"ELASTANO 30","preco":28.4,"pct":7,"final":1.99}],"malharia":2.2,"tingir":9.5,"quebra":8,"custoProduzida":39.09},{"id":142,"nome":"POLIAMIDA - SUPLEX + 6,5%  ELASTANO (1,60 m x 230 g/m2) - PRETO","largura":1.6,"gramatura":230,"rendimento":2.71,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":93,"final":22.51},{"titulo":"ELASTANO 30","preco":28.4,"pct":7,"final":1.99}],"malharia":2.2,"tingir":12.6,"quebra":8,"custoProduzida":42.44},{"id":97,"nome":"POLIAMIDA - SUPLEX + 8%  ELASTANO (1,60 m x 280 g/m2) - BRANCO","largura":1.6,"gramatura":280,"rendimento":2.23,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":92,"final":22.26},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":1.9,"tingir":9.5,"quebra":8,"custoProduzida":38.63},{"id":98,"nome":"POLIAMIDA - SUPLEX + 8%  ELASTANO (1,60 m x 280 g/m2) - PRETO","largura":1.6,"gramatura":280,"rendimento":2.23,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":92,"final":22.26},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":1.9,"tingir":12.6,"quebra":8,"custoProduzida":41.98},{"id":99,"nome":"POLIAMIDA - SUPLEX LIGHT + 8%  ELASTANO (1,60 m x 240 g/m2) - BRANCO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":92,"final":22.26},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":1.9,"tingir":9.5,"quebra":8,"custoProduzida":38.63},{"id":100,"nome":"POLIAMIDA - SUPLEX LIGHT + 8%  ELASTANO (1,60 m x 240 g/m2) - PRETO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":92,"final":22.26},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":1.9,"tingir":12.6,"quebra":8,"custoProduzida":41.98},{"id":101,"nome":"POLIAMIDA - SUPLEX POWER + 14%  ELASTANO (1,60 m x 360 g/m2) - BRANCO","largura":1.6,"gramatura":360,"rendimento":1.74,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":86,"final":20.81},{"titulo":"ELASTANO 70","preco":26.35,"pct":14,"final":3.69}],"malharia":1.9,"tingir":9.5,"quebra":8,"custoProduzida":38.77},{"id":102,"nome":"POLIAMIDA - SUPLEX POWER + 14%  ELASTANO (1,60 m x 360 g/m2) - PRETO","largura":1.6,"gramatura":360,"rendimento":1.74,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 2/70/68 TX.","preco":24.2,"pct":86,"final":20.81},{"titulo":"ELASTANO 70","preco":26.35,"pct":14,"final":3.69}],"malharia":1.9,"tingir":12.6,"quebra":8,"custoProduzida":42.12},{"id":103,"nome":"POLIAMIDA - SUPLEX TEXT. AR + 10%  ELASTANO (1,65 m x 340 g/m2) - BRANCO","largura":1.65,"gramatura":340,"rendimento":1.78,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 200/144 TX. AR","preco":27.7,"pct":90,"final":24.93},{"titulo":"ELASTANO 50","preco":26,"pct":10,"final":2.6}],"malharia":1.9,"tingir":9.5,"quebra":8,"custoProduzida":42.04},{"id":104,"nome":"POLIAMIDA - SUPLEX TEXT. AR + 10%  ELASTANO (1,65 m x 340 g/m2) - PRETO","largura":1.65,"gramatura":340,"rendimento":1.78,"acabamento":"Ramado","fios":[{"titulo":"POLIAMIDA - 200/144 TX. AR","preco":27.7,"pct":90,"final":24.93},{"titulo":"ELASTANO 50","preco":26,"pct":10,"final":2.6}],"malharia":1.9,"tingir":12.6,"quebra":8,"custoProduzida":45.39},{"id":131,"nome":"POLIESTER -  BLACKOUT LIGHT + 7%  ELASTANO (1,60 m x 260 g/m2) - BRANCO","largura":1.6,"gramatura":260,"rendimento":240,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":93,"final":9.11},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":5.8,"tingir":4,"quebra":6,"custoProduzida":22.21},{"id":132,"nome":"POLIESTER -  BLACKOUT LIGHT + 7%  ELASTANO (1,60 m x 260 g/m2) - T. PRETO","largura":1.6,"gramatura":260,"rendimento":240,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":93,"final":11.16},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":5.8,"tingir":3.4,"quebra":6,"custoProduzida":23.74},{"id":135,"nome":"POLIESTER -  BLACKOUT POWER + 14%  ELASTANO (1,60 m x 300 g/m2) - BRANCO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":86,"final":8.43},{"titulo":"ELASTANO 40","preco":26.35,"pct":14,"final":3.69}],"malharia":5.8,"tingir":4,"quebra":6,"custoProduzida":23.23},{"id":136,"nome":"POLIESTER -  BLACKOUT POWER + 14%  ELASTANO (1,60 m x 300 g/m2) - T. PRETO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":86,"final":10.32},{"titulo":"ELASTANO 40","preco":26.35,"pct":14,"final":3.69}],"malharia":5.8,"tingir":3.4,"quebra":6,"custoProduzida":24.6},{"id":53,"nome":"POLIESTER -  FLUITY + 10%  ELASTANO (1,60 m x 170 g/m2) - BRANCO","largura":1.6,"gramatura":170,"rendimento":3.68,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":90,"final":8.82},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":4,"quebra":6,"custoProduzida":21.13},{"id":54,"nome":"POLIESTER -  FLUITY + 10%  ELASTANO (1,60 m x 170 g/m2) - T. PRETO","largura":1.6,"gramatura":170,"rendimento":3.68,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":90,"final":10.8},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":3.4,"quebra":6,"custoProduzida":22.59},{"id":23,"nome":"POLIESTER -  HELANCA DRY (1,80m x 130 g/m2) - BRANCO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX.","preco":10,"pct":100,"final":10}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.68},{"id":24,"nome":"POLIESTER -  HELANCA DRY (1,80m x 130 g/m2) - T. PRETO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX. PRETO","preco":12.1,"pct":100,"final":12.1}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":22.86},{"id":25,"nome":"POLIESTER -  HELANCA ESCOLAR / COLEGIAL (1,05 m x 240 g/m2) - BRANCO","largura":1.05,"gramatura":240,"rendimento":1.98,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":100,"final":9.1}],"malharia":2.4,"tingir":6.08,"quebra":3,"custoProduzida":18.11},{"id":26,"nome":"POLIESTER -  HELANCA ESCOLAR / COLEGIAL (1,05 m x 240 g/m2) - T. PRETO","largura":1.05,"gramatura":240,"rendimento":1.98,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":100,"final":10.8}],"malharia":2.4,"tingir":6.08,"quebra":3,"custoProduzida":19.86},{"id":27,"nome":"POLIESTER -  HELANCA FELPADA (1,60 m x 300 g/m2) - BRANCO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":100,"final":9.1}],"malharia":2.4,"tingir":6.08,"quebra":6,"custoProduzida":18.63},{"id":28,"nome":"POLIESTER -  HELANCA FELPADA (1,60 m x 300 g/m2) - T. PRETO","largura":1.6,"gramatura":300,"rendimento":2.08,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":100,"final":10.8}],"malharia":2.4,"tingir":6.08,"quebra":6,"custoProduzida":20.44},{"id":29,"nome":"POLIESTER -  HELANQUINHA (1,80 m x 120 g/m2) - BRANCO","largura":1.8,"gramatura":120,"rendimento":4.63,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.47},{"id":30,"nome":"POLIESTER -  HELANQUINHA (1,80 m x 120 g/m2) - T. PRETO","largura":1.8,"gramatura":120,"rendimento":4.63,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":22.76},{"id":51,"nome":"POLIESTER -  MICROFIBRA + 10%  ELASTANO (1,60 m x 180 g/m2) - BRANCO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":90,"final":8.82},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":4,"quebra":6,"custoProduzida":21.13},{"id":52,"nome":"POLIESTER -  MICROFIBRA + 10%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":90,"final":10.8},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":4.2,"tingir":3.4,"quebra":6,"custoProduzida":22.59},{"id":55,"nome":"POLIESTER -  MICROFIBRA + 7%  ELASTANO (1,60 m x 180 g/m2) - BRANCO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":93,"final":8.7},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":3.4,"tingir":4,"quebra":6,"custoProduzida":19.22},{"id":56,"nome":"POLIESTER -  MICROFIBRA + 7%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":93,"final":11.07},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":3.4,"tingir":3.4,"quebra":6,"custoProduzida":21.1},{"id":123,"nome":"POLIESTER -  MOLETINHO + 4%  ELASTANO (1,80 m x 170 g/m2) - BRANCO","largura":1.8,"gramatura":170,"rendimento":3.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":96,"final":8.74},{"titulo":"ELASTANO 40","preco":26.35,"pct":4,"final":1.05}],"malharia":3.2,"tingir":6.08,"quebra":6,"custoProduzida":20.21},{"id":124,"nome":"POLIESTER -  MOLETINHO + 4%  ELASTANO (1,80 m x 170 g/m2) - T. PRETO","largura":1.8,"gramatura":170,"rendimento":3.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":96,"final":10.37},{"titulo":"ELASTANO 40","preco":26.35,"pct":4,"final":1.05}],"malharia":3.2,"tingir":6.08,"quebra":6,"custoProduzida":21.94},{"id":87,"nome":"POLIESTER -  NEOPRENE + 7%  ELASTANO (1,60 m x 360 g/m2) - BRANCO","largura":1.6,"gramatura":360,"rendimento":1.74,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX.","preco":10,"pct":93,"final":9.3},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":5.5,"tingir":4,"quebra":6,"custoProduzida":22.09},{"id":88,"nome":"POLIESTER -  NEOPRENE + 7%  ELASTANO (1,60 m x 360 g/m2) - T. PRETO","largura":1.6,"gramatura":360,"rendimento":1.74,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX. PRETO","preco":12.1,"pct":93,"final":11.25},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":5.5,"tingir":3.4,"quebra":6,"custoProduzida":23.53},{"id":85,"nome":"POLIESTER -  NEOPRENE LIGHT + 7%  ELASTANO (1,60 m x 240 g/m2) - BRANCO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX.","preco":10,"pct":93,"final":9.3},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":5.5,"tingir":4,"quebra":6,"custoProduzida":22.09},{"id":86,"nome":"POLIESTER -  NEOPRENE LIGHT + 7%  ELASTANO (1,60 m x 240 g/m2) - T. PRETO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX. PRETO","preco":12.1,"pct":93,"final":11.25},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":5.5,"tingir":3.4,"quebra":6,"custoProduzida":23.53},{"id":71,"nome":"POLIESTER -  PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - BRANCO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX.","preco":10,"pct":84,"final":8.4},{"titulo":"ELASTANO 40","preco":26.35,"pct":16,"final":4.22}],"malharia":4.5,"tingir":4,"quebra":6,"custoProduzida":22.38},{"id":72,"nome":"POLIESTER -  PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - T. PRETO","largura":1.6,"gramatura":240,"rendimento":2.6,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/72 TX. PRETO","preco":12.1,"pct":84,"final":10.16},{"titulo":"ELASTANO 40","preco":26.35,"pct":16,"final":4.22}],"malharia":4.5,"tingir":3.4,"quebra":6,"custoProduzida":23.62},{"id":125,"nome":"POLIESTER -  RIBANA 1X1 (0,60 m x 270 g/m2) - BRANCO","largura":0.6,"gramatura":270,"rendimento":3.09,"acabamento":"Tubular","fios":[{"titulo":"PES - 200/96 TX.","preco":9,"pct":100,"final":9}],"malharia":3,"tingir":4,"quebra":4,"custoProduzida":16.64},{"id":126,"nome":"POLIESTER -  RIBANA 1X1 (0,60 m x 270 g/m2) - T. PRETO","largura":0.6,"gramatura":270,"rendimento":3.09,"acabamento":"Tubular","fios":[{"titulo":"PES - 200/96 TX. PRETO","preco":10.5,"pct":100,"final":10.5}],"malharia":3,"tingir":4,"quebra":4,"custoProduzida":18.2},{"id":59,"nome":"POLIESTER -  ROMANTIC + 10%  ELASTANO (1,60 m x 190 g/m2) - BRANCO","largura":1.6,"gramatura":190,"rendimento":3.29,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":93,"final":8.7},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":3.4,"tingir":4,"quebra":6,"custoProduzida":19.22},{"id":60,"nome":"POLIESTER -  ROMANTIC + 10%  ELASTANO (1,60 m x 190 g/m2) - T. PRETO","largura":1.6,"gramatura":190,"rendimento":3.29,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":90,"final":10.71},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":3.4,"tingir":3.4,"quebra":6,"custoProduzida":21.65},{"id":57,"nome":"POLIESTER -  ROMANTIC + 7%  ELASTANO (1,60 m x 180 g/m2) - BRANCO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":93,"final":8.7},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":3.4,"tingir":4,"quebra":6,"custoProduzida":19.22},{"id":58,"nome":"POLIESTER -  ROMANTIC + 7%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":93,"final":11.07},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":3.4,"tingir":3.4,"quebra":6,"custoProduzida":21.1},{"id":61,"nome":"POLIESTER -  ROMANTIC F28 + 7%  ELASTANO (1,60 m x 160 g/m2) - BRANCO","largura":1.6,"gramatura":160,"rendimento":3.91,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX.","preco":9.35,"pct":90,"final":8.42},{"titulo":"ELASTANO 20","preco":29.15,"pct":10,"final":2.92}],"malharia":2.8,"tingir":4,"quebra":6,"custoProduzida":19.22},{"id":62,"nome":"POLIESTER -  ROMANTIC F28 + 7%  ELASTANO (1,60 m x 160 g/m2) - T. PRETO","largura":1.6,"gramatura":160,"rendimento":3.91,"acabamento":"Ramado","fios":[{"titulo":"PES - 100/144 TX. PRETO","preco":11.9,"pct":93,"final":11.07},{"titulo":"ELASTANO 20","preco":29.15,"pct":7,"final":2.04}],"malharia":2.8,"tingir":3.4,"quebra":6,"custoProduzida":20.47},{"id":91,"nome":"POLIESTER -  SUPLEX + 8%  ELASTANO (1,60 m x 290 g/m2) - BRANCO","largura":1.6,"gramatura":290,"rendimento":2.16,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":92,"final":8.37},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":1.6,"tingir":4,"quebra":6,"custoProduzida":17.04},{"id":92,"nome":"POLIESTER -  SUPLEX + 8%  ELASTANO (1,60 m x 290 g/m2) - T. PRETO","largura":1.6,"gramatura":290,"rendimento":2.16,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":92,"final":9.94},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":1.6,"tingir":3.4,"quebra":6,"custoProduzida":18.07},{"id":89,"nome":"POLIESTER -  SUPLEX LIGHT + 4%  ELASTANO (1,60 m x 180 g/m2) - BRANCO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":96,"final":8.74},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.8,"tingir":4,"quebra":6,"custoProduzida":16.64},{"id":90,"nome":"POLIESTER -  SUPLEX LIGHT + 4%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO","largura":1.6,"gramatura":180,"rendimento":3.47,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":96,"final":10.37},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.8,"tingir":3.4,"quebra":6,"custoProduzida":17.74},{"id":95,"nome":"POLIESTER -  SUPLEX POWER + 10%  ELASTANO (1,60 m x 390 g/m2) - BRANCO","largura":1.6,"gramatura":390,"rendimento":1.6,"acabamento":"Ramado","fios":[{"titulo":"PES - 200/96 TX.","preco":9,"pct":90,"final":8.1},{"titulo":"ELASTANO 70","preco":26.35,"pct":10,"final":2.64}],"malharia":1.8,"tingir":4,"quebra":6,"custoProduzida":17.53},{"id":96,"nome":"POLIESTER -  SUPLEX POWER + 10%  ELASTANO (1,60 m x 390 g/m2) - T. PRETO","largura":1.6,"gramatura":390,"rendimento":1.6,"acabamento":"Ramado","fios":[{"titulo":"PES - 200/96 TX. PRETO","preco":10.5,"pct":90,"final":9.45},{"titulo":"ELASTANO 70","preco":26.35,"pct":10,"final":2.64}],"malharia":1.8,"tingir":3.4,"quebra":6,"custoProduzida":18.32},{"id":93,"nome":"POLIESTER -  SUPLEX TUB. + 8%  ELASTANO (0,92 m x 330 g/m2) - BRANCO","largura":0.92,"gramatura":330,"rendimento":1.65,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":92,"final":8.37},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":2.4,"tingir":4,"quebra":3,"custoProduzida":17.39},{"id":94,"nome":"POLIESTER -  SUPLEX TUB. + 8%  ELASTANO (0,92 m x 330 g/m2) - T. PRETO","largura":0.92,"gramatura":330,"rendimento":1.65,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":92,"final":9.94},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":2.4,"tingir":3.4,"quebra":3,"custoProduzida":18.38},{"id":3,"nome":"POLIESTER - CACHARREL (1,60m x 120 g/m2) - BRANCO","largura":1.6,"gramatura":120,"rendimento":5.21,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.47},{"id":4,"nome":"POLIESTER - CACHARREL (1,60m x 120 g/m2) - T PRETO","largura":1.6,"gramatura":120,"rendimento":5.21,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":3.8,"tingir":3.4,"quebra":4,"custoProduzida":19.97},{"id":1,"nome":"POLIESTER - CACHARREL (1,80m x 130 g/m2) - BRANCO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.47},{"id":2,"nome":"POLIESTER - CACHARREL (1,80m x 130 g/m2) - T. PRETO","largura":1.8,"gramatura":130,"rendimento":4.27,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":3.8,"tingir":3.4,"quebra":4,"custoProduzida":19.97},{"id":5,"nome":"POLIESTER - CANELADO 2X1 + 4%  ELASTANO (1,60 m x 220 g/m2) - BRANCO","largura":1.6,"gramatura":220,"rendimento":2.84,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":96,"final":8.74},{"titulo":"ELASTANO 40","preco":26.35,"pct":4,"final":1.05}],"malharia":3.3,"tingir":6.08,"quebra":4,"custoProduzida":19.94},{"id":6,"nome":"POLIESTER - CANELADO 2X1 + 4%  ELASTANO (1,60 m x 220 g/m2) - T. PRETO","largura":1.6,"gramatura":220,"rendimento":2.84,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":96,"final":10.37},{"titulo":"ELASTANO 40","preco":26.35,"pct":4,"final":1.05}],"malharia":3.3,"tingir":6.08,"quebra":4,"custoProduzida":21.63},{"id":7,"nome":"POLIESTER - CANELADO 6X3 + 2%  ELASTANO (1,60 m x 200 g/m2) - BRANCO","largura":1.6,"gramatura":200,"rendimento":3.13,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX.","preco":9.1,"pct":98,"final":8.92},{"titulo":"ELASTANO 20","preco":29.15,"pct":2,"final":0.58}],"malharia":3.3,"tingir":6.08,"quebra":4,"custoProduzida":19.64},{"id":8,"nome":"POLIESTER - CANELADO 6X3 + 2%  ELASTANO (1,60 m x 200 g/m2) - T. PRETO","largura":1.6,"gramatura":200,"rendimento":3.13,"acabamento":"Ramado","fios":[{"titulo":"PES - 150/144 TX. PRETO","preco":10.8,"pct":98,"final":10.58},{"titulo":"ELASTANO 20","preco":29.15,"pct":2,"final":0.58}],"malharia":3.3,"tingir":6.08,"quebra":4,"custoProduzida":21.37},{"id":19,"nome":"POLIESTER - HELANCA LIGHT (1,60 m x 120 g/m2) - BRANCO","largura":1.6,"gramatura":120,"rendimento":5.21,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.47},{"id":20,"nome":"POLIESTER - HELANCA LIGHT (1,60 m x 120 g/m2) - T. PRETO","largura":1.6,"gramatura":120,"rendimento":5.21,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":22.76},{"id":21,"nome":"POLIESTER - HELANCA LIGHT (1,80m x 120 g/m2) - BRANCO","largura":1.8,"gramatura":120,"rendimento":4.63,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX.","preco":9.8,"pct":100,"final":9.8}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":20.47},{"id":22,"nome":"POLIESTER - HELANCA LIGHT (1,80m x 120 g/m2) - T. PRETO","largura":1.8,"gramatura":120,"rendimento":4.63,"acabamento":"Ramado","fios":[{"titulo":"PES - 75/36 TX. PRETO","preco":12,"pct":100,"final":12}],"malharia":3.8,"tingir":6.08,"quebra":4,"custoProduzida":22.76},{"id":47,"nome":"POLIESTER / ALG. - MALHA PA 30/1 50/50 (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 30/1 O.E.","preco":17.4,"pct":100,"final":17.4}],"malharia":1.9,"tingir":4,"quebra":6,"custoProduzida":24.7},{"id":48,"nome":"POLIESTER / ALG. - MALHA PA 30/1 50/50 (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 30/1 O.E.","preco":17.4,"pct":100,"final":17.4}],"malharia":1.9,"tingir":10,"quebra":6,"custoProduzida":31.06},{"id":83,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - RAMADO FELPADO (1,80 m x 340 g/m2) - BRANCO","largura":1.8,"gramatura":340,"rendimento":1.63,"acabamento":"Ramado","fios":[{"titulo":"PA 50/50 - 24/1 VORTEX","preco":23,"pct":48,"final":11.04},{"titulo":"PA 50/50 - 8/1 CONV.","preco":21,"pct":52,"final":10.92}],"malharia":1.7,"tingir":8.28,"quebra":6,"custoProduzida":33.86},{"id":84,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - RAMADO FELPADO (1,80 m x 340 g/m2) - PRETO","largura":1.8,"gramatura":340,"rendimento":1.63,"acabamento":"Ramado","fios":[{"titulo":"PA 50/50 - 24/1 VORTEX","preco":23,"pct":48,"final":11.04},{"titulo":"PA 50/50 - 8/1 CONV.","preco":21,"pct":52,"final":10.92}],"malharia":1.7,"tingir":14.28,"quebra":6,"custoProduzida":40.22},{"id":81,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. CARECA (0,95 m x 280 g/m2) - BRANCO","largura":0.95,"gramatura":280,"rendimento":1.88,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 24/1 VORTEX","preco":23,"pct":48,"final":11.04},{"titulo":"PA 50/50 - 8/1 CONV.","preco":21,"pct":52,"final":10.92}],"malharia":1.7,"tingir":4,"quebra":6,"custoProduzida":29.32},{"id":82,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. CARECA (0,95 m x 280 g/m2) - PRETO","largura":0.95,"gramatura":280,"rendimento":1.88,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 24/1 VORTEX","preco":23,"pct":48,"final":11.04},{"titulo":"PA 50/50 - 8/1 CONV.","preco":21,"pct":52,"final":10.92}],"malharia":1.7,"tingir":10,"quebra":6,"custoProduzida":35.68},{"id":149,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. FELPADO (0,92 m x 290 g/m2) - BRANCO","largura":0.92,"gramatura":290,"rendimento":1.87,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 24/1 O.E.","preco":16.4,"pct":48,"final":7.87},{"titulo":"PA 50/50 - 8/1 O.E.","preco":19.9,"pct":52,"final":10.35}],"malharia":1.7,"tingir":6.2,"quebra":6,"custoProduzida":27.69},{"id":150,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. FELPADO (0,92 m x 290 g/m2) - PRETO","largura":0.92,"gramatura":290,"rendimento":1.87,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 24/1 O.E.","preco":16.4,"pct":48,"final":7.87},{"titulo":"PA 50/50 - 8/1 O.E.","preco":19.9,"pct":52,"final":10.35}],"malharia":1.7,"tingir":12.2,"quebra":6,"custoProduzida":34.05},{"id":127,"nome":"POLIESTER / ALG. - PIQUET PA 50/50 (1,20 m x 200 g/m2) - BRANCO","largura":1.2,"gramatura":200,"rendimento":2.08,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 30/1 VORTEX","preco":19.3,"pct":100,"final":19.3}],"malharia":2.6,"tingir":4,"quebra":6,"custoProduzida":27.45},{"id":128,"nome":"POLIESTER / ALG. - PIQUET PA 50/50 (1,20 m x 200 g/m2) - PRETO","largura":1.2,"gramatura":200,"rendimento":2.08,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 30/1 VORTEX","preco":19.3,"pct":100,"final":19.3}],"malharia":2.6,"tingir":10,"quebra":6,"custoProduzida":33.81},{"id":129,"nome":"POLIESTER / ALG. - PIQUET PA 60/40 (1,20 m x 180 g/m2) - BRANCO","largura":1.2,"gramatura":180,"rendimento":2.31,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/96 TX.","preco":9.55,"pct":60,"final":5.73},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":40,"final":6.76}],"malharia":2.6,"tingir":4,"quebra":6,"custoProduzida":20.24},{"id":130,"nome":"POLIESTER / ALG. - PIQUET PA 60/40 (1,20 m x 180 g/m2) - PRETO","largura":1.2,"gramatura":180,"rendimento":2.31,"acabamento":"Tubular","fios":[{"titulo":"PES - 150/96 TX.","preco":9.55,"pct":60,"final":5.73},{"titulo":"ALGODÃO - 30/1 O.E.","preco":16.9,"pct":40,"final":6.76}],"malharia":2.6,"tingir":10,"quebra":6,"custoProduzida":26.6},{"id":105,"nome":"POLIESTER / ALG. - SUEDINE PA 50/50 (0,94 m x 240 g/m2) - BRANCO","largura":0.94,"gramatura":240,"rendimento":2.21,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 30/1 VORTEX","preco":19.3,"pct":100,"final":19.3}],"malharia":3.6,"tingir":4,"quebra":6,"custoProduzida":28.51},{"id":106,"nome":"POLIESTER / ALG. - SUEDINE PA 50/50 (0,94 m x 240 g/m2) - PRETO","largura":0.94,"gramatura":240,"rendimento":2.21,"acabamento":"Tubular","fios":[{"titulo":"PA 50/50 - 30/1 VORTEX","preco":19.3,"pct":100,"final":19.3}],"malharia":3.6,"tingir":10,"quebra":6,"custoProduzida":34.87},{"id":49,"nome":"POLIESTER / VISC. - MALHA PV 30/1 67/33 (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"PV - 30/1 CONV.","preco":15.35,"pct":100,"final":15.35}],"malharia":1.9,"tingir":4,"quebra":4,"custoProduzida":22.1},{"id":50,"nome":"POLIESTER / VISC. - MALHA PV 30/1 67/33 (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"PV - 30/1 CONV.","preco":15.35,"pct":100,"final":15.35}],"malharia":1.9,"tingir":10,"quebra":4,"custoProduzida":28.34},{"id":11,"nome":"POLIESTER FIADO - CANELADO 6X3 + 4%  ELASTANO (1,40 m x 220 g/m2) - BRANCO","largura":1.4,"gramatura":220,"rendimento":3.25,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":96,"final":11.23},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":4.2,"tingir":6.08,"quebra":4,"custoProduzida":23.59},{"id":12,"nome":"POLIESTER FIADO - CANELADO 6X3 + 4%  ELASTANO (1,40 m x 220 g/m2) - PRETO","largura":1.4,"gramatura":220,"rendimento":3.25,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":96,"final":11.23},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":4.2,"tingir":11,"quebra":4,"custoProduzida":28.7},{"id":9,"nome":"POLIESTER FIADO - CANELADO 6X3 + 8%  ELASTANO (1,40 m x 260 g/m2) - BRANCO","largura":1.4,"gramatura":260,"rendimento":2.75,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":92,"final":10.76},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":4.2,"tingir":6.08,"quebra":4,"custoProduzida":24.08},{"id":10,"nome":"POLIESTER FIADO - CANELADO 6X3 + 8%  ELASTANO (1,40 m x 260 g/m2) - PRETO","largura":1.4,"gramatura":260,"rendimento":2.75,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":92,"final":10.76},{"titulo":"ELASTANO 40","preco":26.35,"pct":8,"final":2.11}],"malharia":4.2,"tingir":11,"quebra":4,"custoProduzida":29.19},{"id":45,"nome":"POLIESTER FIADO - MALHA 30/1 + 4%  ELASTANO (1,80 m x 180 g/m2) - BRANCO","largura":1.8,"gramatura":180,"rendimento":3.09,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":96,"final":11.23},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.7,"tingir":6.08,"quebra":4,"custoProduzida":20.99},{"id":46,"nome":"POLIESTER FIADO - MALHA 30/1 + 4%  ELASTANO (1,80 m x 180 g/m2) - PRETO","largura":1.8,"gramatura":180,"rendimento":3.09,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":96,"final":11.23},{"titulo":"ELASTANO 20","preco":29.15,"pct":4,"final":1.17}],"malharia":1.7,"tingir":11,"quebra":4,"custoProduzida":26.1},{"id":41,"nome":"POLIESTER FIADO - MALHA 30/1 RAMADA (1,80 m x 140 g/m2) - BRANCO","largura":1.8,"gramatura":140,"rendimento":3.97,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":100,"final":11.7}],"malharia":1.7,"tingir":6.08,"quebra":4,"custoProduzida":20.26},{"id":42,"nome":"POLIESTER FIADO - MALHA 30/1 RAMADA (1,80 m x 140 g/m2) - PRETO","largura":1.8,"gramatura":140,"rendimento":3.97,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":100,"final":11.7}],"malharia":1.7,"tingir":11,"quebra":4,"custoProduzida":25.38},{"id":43,"nome":"POLIESTER FIADO - MALHA PP 30/1 TUB. (1,20 m x 155 g/m2) - BRANCO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":100,"final":11.7}],"malharia":1.9,"tingir":4,"quebra":4,"custoProduzida":18.3},{"id":44,"nome":"POLIESTER FIADO - MALHA PP 30/1 TUB. (1,20 m x 155 g/m2) - PRETO","largura":1.2,"gramatura":155,"rendimento":2.69,"acabamento":"Tubular","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":100,"final":11.7}],"malharia":1.9,"tingir":8.92,"quebra":4,"custoProduzida":23.42},{"id":73,"nome":"POLIESTER FIADO - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - BRANCO","largura":1.8,"gramatura":250,"rendimento":2.22,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":97,"final":11.35},{"titulo":"ELASTANO 20","preco":29.15,"pct":3,"final":0.87}],"malharia":2.6,"tingir":6.08,"quebra":5,"custoProduzida":21.95},{"id":74,"nome":"POLIESTER FIADO - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - PRETO","largura":1.8,"gramatura":250,"rendimento":2.22,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":97,"final":11.35},{"titulo":"ELASTANO 20","preco":29.15,"pct":3,"final":0.87}],"malharia":2.6,"tingir":11,"quebra":5,"custoProduzida":27.11},{"id":75,"nome":"POLIESTER FIADO - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - BRANCO","largura":1.8,"gramatura":300,"rendimento":1.85,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":94,"final":11},{"titulo":"ELASTANO 40","preco":26.35,"pct":6,"final":1.58}],"malharia":2.6,"tingir":6.08,"quebra":5,"custoProduzida":22.32},{"id":76,"nome":"POLIESTER FIADO - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - PRETO","largura":1.8,"gramatura":300,"rendimento":1.85,"acabamento":"Ramado","fios":[{"titulo":"PES FIADO - 30/1","preco":11.7,"pct":94,"final":11},{"titulo":"ELASTANO 40","preco":26.35,"pct":6,"final":1.58}],"malharia":2.6,"tingir":11,"quebra":5,"custoProduzida":27.49},{"id":77,"nome":"VISCOSE - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - BRANCO","largura":1.8,"gramatura":250,"rendimento":2.22,"acabamento":"Ramado","fios":[{"titulo":"VISCOSE - 30/1 VORTEX","preco":17.85,"pct":97,"final":17.31},{"titulo":"ELASTANO 20","preco":29.15,"pct":3,"final":0.87}],"malharia":2.6,"tingir":6.5,"quebra":10,"custoProduzida":30.02},{"id":78,"nome":"VISCOSE - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - PRETO","largura":1.8,"gramatura":250,"rendimento":2.22,"acabamento":"Ramado","fios":[{"titulo":"VISCOSE - 30/1 VORTEX","preco":17.85,"pct":97,"final":17.31},{"titulo":"ELASTANO 20","preco":29.15,"pct":3,"final":0.87}],"malharia":2.6,"tingir":9.5,"quebra":10,"custoProduzida":33.32},{"id":79,"nome":"VISCOSE - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - BRANCO","largura":1.8,"gramatura":300,"rendimento":1.85,"acabamento":"Ramado","fios":[{"titulo":"VISCOSE - 30/1 VORTEX","preco":17.85,"pct":94,"final":16.78},{"titulo":"ELASTANO 40","preco":26.35,"pct":6,"final":1.58}],"malharia":2.6,"tingir":6.5,"quebra":10,"custoProduzida":30.21},{"id":80,"nome":"VISCOSE - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - PRETO","largura":1.8,"gramatura":300,"rendimento":1.85,"acabamento":"Ramado","fios":[{"titulo":"VISCOSE - 30/1 VORTEX","preco":17.85,"pct":94,"final":16.78},{"titulo":"ELASTANO 40","preco":26.35,"pct":6,"final":1.58}],"malharia":2.6,"tingir":9.5,"quebra":10,"custoProduzida":33.51}];
+const DB={};_FB.forEach(d=>DB[d.id]=d);
+const ML=[{"id":151,"nome":"ALGODÃO - MALHA 24/1  O.E. (1,20 m x 155 g/m2) - BRANCO"},{"id":152,"nome":"ALGODÃO - MALHA 24/1  O.E. (1,20 m x 155 g/m2) - PRETO"},{"id":31,"nome":"ALGODÃO - MALHA 26/1 PENT. (1,20 m x 175 g/m2) - BRANCO"},{"id":32,"nome":"ALGODÃO - MALHA 26/1 PENT. (1,20 m x 175 g/m2) - PRETO"},{"id":37,"nome":"ALGODÃO - MALHA 30/1 \"MISTA\" (1,20 m x 155 g/m2) - BRANCO"},{"id":38,"nome":"ALGODÃO - MALHA 30/1 \"MISTA\" (1,20 m x 155 g/m2) - PRETO"},{"id":39,"nome":"ALGODÃO - MALHA 30/1 LENÇOL \"MISTA\" (1,38 m x 135 g/m2) - BRANCO"},{"id":40,"nome":"ALGODÃO - MALHA 30/1 LENÇOL \"MISTA\" (1,38 m x 135 g/m2) - PRETO"},{"id":33,"nome":"ALGODÃO - MALHA 30/1 O.E. (1,20 m x 155 g/m2) - BRANCO"},{"id":34,"nome":"ALGODÃO - MALHA 30/1 O.E. (1,20 m x 155 g/m2) - PRETO"},{"id":35,"nome":"ALGODÃO - MALHA 30/1 PENT. (1,20 m x 155 g/m2) - BRANCO"},{"id":36,"nome":"ALGODÃO - MALHA 30/1 PENT. (1,20 m x 155 g/m2) - PRETO"},{"id":107,"nome":"ALGODÃO - SUEDINE (0,90 m x 190 g/m2) - BRANCO"},{"id":108,"nome":"ALGODÃO - SUEDINE (0,90 m x 190 g/m2) - PRETO"},{"id":17,"nome":"COTTON 30/1 ALGODÃO \"MISTO\" + 4%  ELASTANO (1,72 m x 195 g/m2) - BRANCO"},{"id":18,"nome":"COTTON 30/1 ALGODÃO \"MISTO\" + 4%  ELASTANO (1,72 m x 195 g/m2) - PRETO"},{"id":15,"nome":"COTTON 30/1 ALGODÃO O.E. + 4%  ELASTANO (1,72 m x 195 g/m2) - BRANCO"},{"id":16,"nome":"COTTON 30/1 ALGODÃO O.E. + 4%  ELASTANO (1,72 m x 195 g/m2) - PRETO"},{"id":13,"nome":"COTTON 30/1 ALGODÃO PENT. + 4%  ELASTANO (1,72 m x 195 g/m2) - BRANCO"},{"id":14,"nome":"COTTON 30/1 ALGODÃO PENT. + 4%  ELASTANO (1,72 m x 195 g/m2) - PRETO"},{"id":111,"nome":"ESPORTIVO POLIESTER -   GRÃO DE ARROZ (1,80 m x 145 g/m2) - BRANCO"},{"id":112,"nome":"ESPORTIVO POLIESTER -   GRÃO DE ARROZ (1,80 m x 145 g/m2) - T. PRETO"},{"id":117,"nome":"ESPORTIVO POLIESTER -  COLMÉIA 3X3 (1,80 m x 130 g/m2) - BRANCO"},{"id":118,"nome":"ESPORTIVO POLIESTER -  COLMÉIA 3X3 (1,80 m x 130 g/m2) - T. PRETO"},{"id":115,"nome":"ESPORTIVO POLIESTER -  COLMÉIA FLOR (1,80 m x 145 g/m2) - BRANCO"},{"id":116,"nome":"ESPORTIVO POLIESTER -  COLMÉIA FLOR (1,80 m x 145 g/m2) - T. PRETO"},{"id":113,"nome":"ESPORTIVO POLIESTER -  GRÃO DE ARROZ (1,80 m x 130 g/m2) - BRANCO"},{"id":114,"nome":"ESPORTIVO POLIESTER -  GRÃO DE ARROZ (1,80 m x 130 g/m2) - T. PRETO"},{"id":119,"nome":"ESPORTIVO POLIESTER -  QUADRICULADO (1,80 m x 130 g/m2) - BRANCO"},{"id":120,"nome":"ESPORTIVO POLIESTER -  QUADRICULADO (1,80 m x 130 g/m2) - T. PRETO"},{"id":121,"nome":"ESPORTIVO POLIESTER -  TELINHA TUB. (0,90 m x 110 g/m2) - BRANCO"},{"id":122,"nome":"ESPORTIVO POLIESTER -  TELINHA TUB. (0,90 m x 110 g/m2) - T. PRETO"},{"id":109,"nome":"ESPORTIVO POLIESTER - DRY FIT (1,80 m x 130 g/m2) - BRANCO"},{"id":110,"nome":"ESPORTIVO POLIESTER - DRY FIT (1,80 m x 130 g/m2) - T. PRETO"},{"id":133,"nome":"POLIAMIDA - BLACKOUT + 14%  ELASTANO (1,60 m x 300 g/m2) - BRANCO"},{"id":134,"nome":"POLIAMIDA - BLACKOUT + 14%  ELASTANO (1,60 m x 300 g/m2) - T. PRETO"},{"id":143,"nome":"POLIAMIDA - HELANCA TUB. (1,05 m x 260 g/m2) - BRANCO"},{"id":144,"nome":"POLIAMIDA - HELANCA TUB. (1,05 m x 260 g/m2) - PRETO"},{"id":67,"nome":"POLIAMIDA - LINGERIE + 10%  ELASTANO (1,60 m x 185 g/m2) - BRANCO"},{"id":68,"nome":"POLIAMIDA - LINGERIE + 10%  ELASTANO (1,60 m x 185 g/m2) - PRETO"},{"id":145,"nome":"POLIAMIDA - MALHA JAZZ + 15%  ELASTANO (1,60 m x 350 g/m2) - BRANCO"},{"id":146,"nome":"POLIAMIDA - MALHA JAZZ + 15%  ELASTANO (1,60 m x 350 g/m2) - PRETO"},{"id":147,"nome":"POLIAMIDA - MALHA TULIPA + 8%  ELASTANO (1,40 m x 300 g/m2) - BRANCO"},{"id":148,"nome":"POLIAMIDA - MALHA TULIPA + 8%  ELASTANO (1,40 m x 300 g/m2) - PRETO"},{"id":63,"nome":"POLIAMIDA - MICROFIBRA + 10%  ELASTANO (1,75 m x 170 g/m2) - BRANCO"},{"id":64,"nome":"POLIAMIDA - MICROFIBRA + 10%  ELASTANO (1,75 m x 170 g/m2) - PRETO"},{"id":137,"nome":"POLIAMIDA - MICROFIBRA RUNNING (1,80 m x 110 g/m2) - BRANCO"},{"id":138,"nome":"POLIAMIDA - MICROFIBRA RUNNING (1,80 m x 110 g/m2) - PRETO"},{"id":69,"nome":"POLIAMIDA - PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - BRANCO"},{"id":70,"nome":"POLIAMIDA - PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - PRETO"},{"id":65,"nome":"POLIAMIDA - PROTECÃO UV + 10%  ELASTANO (1,75 m x 170 g/m2) - BRANCO"},{"id":66,"nome":"POLIAMIDA - PROTECÃO UV + 10%  ELASTANO (1,75 m x 170 g/m2) - PRETO"},{"id":139,"nome":"POLIAMIDA - SUPLEX + 10%  ELASTANO (1,60 m x 300 g/m2) - BRANCO"},{"id":140,"nome":"POLIAMIDA - SUPLEX + 10%  ELASTANO (1,60 m x 300 g/m2) - PRETO"},{"id":141,"nome":"POLIAMIDA - SUPLEX + 6,5%  ELASTANO (1,60 m x 230 g/m2) - BRANCO"},{"id":142,"nome":"POLIAMIDA - SUPLEX + 6,5%  ELASTANO (1,60 m x 230 g/m2) - PRETO"},{"id":97,"nome":"POLIAMIDA - SUPLEX + 8%  ELASTANO (1,60 m x 280 g/m2) - BRANCO"},{"id":98,"nome":"POLIAMIDA - SUPLEX + 8%  ELASTANO (1,60 m x 280 g/m2) - PRETO"},{"id":99,"nome":"POLIAMIDA - SUPLEX LIGHT + 8%  ELASTANO (1,60 m x 240 g/m2) - BRANCO"},{"id":100,"nome":"POLIAMIDA - SUPLEX LIGHT + 8%  ELASTANO (1,60 m x 240 g/m2) - PRETO"},{"id":101,"nome":"POLIAMIDA - SUPLEX POWER + 14%  ELASTANO (1,60 m x 360 g/m2) - BRANCO"},{"id":102,"nome":"POLIAMIDA - SUPLEX POWER + 14%  ELASTANO (1,60 m x 360 g/m2) - PRETO"},{"id":103,"nome":"POLIAMIDA - SUPLEX TEXT. AR + 10%  ELASTANO (1,65 m x 340 g/m2) - BRANCO"},{"id":104,"nome":"POLIAMIDA - SUPLEX TEXT. AR + 10%  ELASTANO (1,65 m x 340 g/m2) - PRETO"},{"id":131,"nome":"POLIESTER -  BLACKOUT LIGHT + 7%  ELASTANO (1,60 m x 260 g/m2) - BRANCO"},{"id":132,"nome":"POLIESTER -  BLACKOUT LIGHT + 7%  ELASTANO (1,60 m x 260 g/m2) - T. PRETO"},{"id":135,"nome":"POLIESTER -  BLACKOUT POWER + 14%  ELASTANO (1,60 m x 300 g/m2) - BRANCO"},{"id":136,"nome":"POLIESTER -  BLACKOUT POWER + 14%  ELASTANO (1,60 m x 300 g/m2) - T. PRETO"},{"id":53,"nome":"POLIESTER -  FLUITY + 10%  ELASTANO (1,60 m x 170 g/m2) - BRANCO"},{"id":54,"nome":"POLIESTER -  FLUITY + 10%  ELASTANO (1,60 m x 170 g/m2) - T. PRETO"},{"id":23,"nome":"POLIESTER -  HELANCA DRY (1,80m x 130 g/m2) - BRANCO"},{"id":24,"nome":"POLIESTER -  HELANCA DRY (1,80m x 130 g/m2) - T. PRETO"},{"id":25,"nome":"POLIESTER -  HELANCA ESCOLAR / COLEGIAL (1,05 m x 240 g/m2) - BRANCO"},{"id":26,"nome":"POLIESTER -  HELANCA ESCOLAR / COLEGIAL (1,05 m x 240 g/m2) - T. PRETO"},{"id":27,"nome":"POLIESTER -  HELANCA FELPADA (1,60 m x 300 g/m2) - BRANCO"},{"id":28,"nome":"POLIESTER -  HELANCA FELPADA (1,60 m x 300 g/m2) - T. PRETO"},{"id":29,"nome":"POLIESTER -  HELANQUINHA (1,80 m x 120 g/m2) - BRANCO"},{"id":30,"nome":"POLIESTER -  HELANQUINHA (1,80 m x 120 g/m2) - T. PRETO"},{"id":51,"nome":"POLIESTER -  MICROFIBRA + 10%  ELASTANO (1,60 m x 180 g/m2) - BRANCO"},{"id":52,"nome":"POLIESTER -  MICROFIBRA + 10%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO"},{"id":55,"nome":"POLIESTER -  MICROFIBRA + 7%  ELASTANO (1,60 m x 180 g/m2) - BRANCO"},{"id":56,"nome":"POLIESTER -  MICROFIBRA + 7%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO"},{"id":123,"nome":"POLIESTER -  MOLETINHO + 4%  ELASTANO (1,80 m x 170 g/m2) - BRANCO"},{"id":124,"nome":"POLIESTER -  MOLETINHO + 4%  ELASTANO (1,80 m x 170 g/m2) - T. PRETO"},{"id":87,"nome":"POLIESTER -  NEOPRENE + 7%  ELASTANO (1,60 m x 360 g/m2) - BRANCO"},{"id":88,"nome":"POLIESTER -  NEOPRENE + 7%  ELASTANO (1,60 m x 360 g/m2) - T. PRETO"},{"id":85,"nome":"POLIESTER -  NEOPRENE LIGHT + 7%  ELASTANO (1,60 m x 240 g/m2) - BRANCO"},{"id":86,"nome":"POLIESTER -  NEOPRENE LIGHT + 7%  ELASTANO (1,60 m x 240 g/m2) - T. PRETO"},{"id":71,"nome":"POLIESTER -  PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - BRANCO"},{"id":72,"nome":"POLIESTER -  PRAIA + 16%  ELASTANO (1,60 m x 240 g/m2) - T. PRETO"},{"id":125,"nome":"POLIESTER -  RIBANA 1X1 (0,60 m x 270 g/m2) - BRANCO"},{"id":126,"nome":"POLIESTER -  RIBANA 1X1 (0,60 m x 270 g/m2) - T. PRETO"},{"id":59,"nome":"POLIESTER -  ROMANTIC + 10%  ELASTANO (1,60 m x 190 g/m2) - BRANCO"},{"id":60,"nome":"POLIESTER -  ROMANTIC + 10%  ELASTANO (1,60 m x 190 g/m2) - T. PRETO"},{"id":57,"nome":"POLIESTER -  ROMANTIC + 7%  ELASTANO (1,60 m x 180 g/m2) - BRANCO"},{"id":58,"nome":"POLIESTER -  ROMANTIC + 7%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO"},{"id":61,"nome":"POLIESTER -  ROMANTIC F28 + 7%  ELASTANO (1,60 m x 160 g/m2) - BRANCO"},{"id":62,"nome":"POLIESTER -  ROMANTIC F28 + 7%  ELASTANO (1,60 m x 160 g/m2) - T. PRETO"},{"id":91,"nome":"POLIESTER -  SUPLEX + 8%  ELASTANO (1,60 m x 290 g/m2) - BRANCO"},{"id":92,"nome":"POLIESTER -  SUPLEX + 8%  ELASTANO (1,60 m x 290 g/m2) - T. PRETO"},{"id":89,"nome":"POLIESTER -  SUPLEX LIGHT + 4%  ELASTANO (1,60 m x 180 g/m2) - BRANCO"},{"id":90,"nome":"POLIESTER -  SUPLEX LIGHT + 4%  ELASTANO (1,60 m x 180 g/m2) - T. PRETO"},{"id":95,"nome":"POLIESTER -  SUPLEX POWER + 10%  ELASTANO (1,60 m x 390 g/m2) - BRANCO"},{"id":96,"nome":"POLIESTER -  SUPLEX POWER + 10%  ELASTANO (1,60 m x 390 g/m2) - T. PRETO"},{"id":93,"nome":"POLIESTER -  SUPLEX TUB. + 8%  ELASTANO (0,92 m x 330 g/m2) - BRANCO"},{"id":94,"nome":"POLIESTER -  SUPLEX TUB. + 8%  ELASTANO (0,92 m x 330 g/m2) - T. PRETO"},{"id":3,"nome":"POLIESTER - CACHARREL (1,60m x 120 g/m2) - BRANCO"},{"id":4,"nome":"POLIESTER - CACHARREL (1,60m x 120 g/m2) - T PRETO"},{"id":1,"nome":"POLIESTER - CACHARREL (1,80m x 130 g/m2) - BRANCO"},{"id":2,"nome":"POLIESTER - CACHARREL (1,80m x 130 g/m2) - T. PRETO"},{"id":5,"nome":"POLIESTER - CANELADO 2X1 + 4%  ELASTANO (1,60 m x 220 g/m2) - BRANCO"},{"id":6,"nome":"POLIESTER - CANELADO 2X1 + 4%  ELASTANO (1,60 m x 220 g/m2) - T. PRETO"},{"id":7,"nome":"POLIESTER - CANELADO 6X3 + 2%  ELASTANO (1,60 m x 200 g/m2) - BRANCO"},{"id":8,"nome":"POLIESTER - CANELADO 6X3 + 2%  ELASTANO (1,60 m x 200 g/m2) - T. PRETO"},{"id":19,"nome":"POLIESTER - HELANCA LIGHT (1,60 m x 120 g/m2) - BRANCO"},{"id":20,"nome":"POLIESTER - HELANCA LIGHT (1,60 m x 120 g/m2) - T. PRETO"},{"id":21,"nome":"POLIESTER - HELANCA LIGHT (1,80m x 120 g/m2) - BRANCO"},{"id":22,"nome":"POLIESTER - HELANCA LIGHT (1,80m x 120 g/m2) - T. PRETO"},{"id":47,"nome":"POLIESTER / ALG. - MALHA PA 30/1 50/50 (1,20 m x 155 g/m2) - BRANCO"},{"id":48,"nome":"POLIESTER / ALG. - MALHA PA 30/1 50/50 (1,20 m x 155 g/m2) - PRETO"},{"id":83,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - RAMADO FELPADO (1,80 m x 340 g/m2) - BRANCO"},{"id":84,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - RAMADO FELPADO (1,80 m x 340 g/m2) - PRETO"},{"id":81,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. CARECA (0,95 m x 280 g/m2) - BRANCO"},{"id":82,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. CARECA (0,95 m x 280 g/m2) - PRETO"},{"id":149,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. FELPADO (0,92 m x 290 g/m2) - BRANCO"},{"id":150,"nome":"POLIESTER / ALG. - MOLETOM PA 50/50 - TUB. FELPADO (0,92 m x 290 g/m2) - PRETO"},{"id":127,"nome":"POLIESTER / ALG. - PIQUET PA 50/50 (1,20 m x 200 g/m2) - BRANCO"},{"id":128,"nome":"POLIESTER / ALG. - PIQUET PA 50/50 (1,20 m x 200 g/m2) - PRETO"},{"id":129,"nome":"POLIESTER / ALG. - PIQUET PA 60/40 (1,20 m x 180 g/m2) - BRANCO"},{"id":130,"nome":"POLIESTER / ALG. - PIQUET PA 60/40 (1,20 m x 180 g/m2) - PRETO"},{"id":105,"nome":"POLIESTER / ALG. - SUEDINE PA 50/50 (0,94 m x 240 g/m2) - BRANCO"},{"id":106,"nome":"POLIESTER / ALG. - SUEDINE PA 50/50 (0,94 m x 240 g/m2) - PRETO"},{"id":49,"nome":"POLIESTER / VISC. - MALHA PV 30/1 67/33 (1,20 m x 155 g/m2) - BRANCO"},{"id":50,"nome":"POLIESTER / VISC. - MALHA PV 30/1 67/33 (1,20 m x 155 g/m2) - PRETO"},{"id":11,"nome":"POLIESTER FIADO - CANELADO 6X3 + 4%  ELASTANO (1,40 m x 220 g/m2) - BRANCO"},{"id":12,"nome":"POLIESTER FIADO - CANELADO 6X3 + 4%  ELASTANO (1,40 m x 220 g/m2) - PRETO"},{"id":9,"nome":"POLIESTER FIADO - CANELADO 6X3 + 8%  ELASTANO (1,40 m x 260 g/m2) - BRANCO"},{"id":10,"nome":"POLIESTER FIADO - CANELADO 6X3 + 8%  ELASTANO (1,40 m x 260 g/m2) - PRETO"},{"id":45,"nome":"POLIESTER FIADO - MALHA 30/1 + 4%  ELASTANO (1,80 m x 180 g/m2) - BRANCO"},{"id":46,"nome":"POLIESTER FIADO - MALHA 30/1 + 4%  ELASTANO (1,80 m x 180 g/m2) - PRETO"},{"id":41,"nome":"POLIESTER FIADO - MALHA 30/1 RAMADA (1,80 m x 140 g/m2) - BRANCO"},{"id":42,"nome":"POLIESTER FIADO - MALHA 30/1 RAMADA (1,80 m x 140 g/m2) - PRETO"},{"id":43,"nome":"POLIESTER FIADO - MALHA PP 30/1 TUB. (1,20 m x 155 g/m2) - BRANCO"},{"id":44,"nome":"POLIESTER FIADO - MALHA PP 30/1 TUB. (1,20 m x 155 g/m2) - PRETO"},{"id":73,"nome":"POLIESTER FIADO - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - BRANCO"},{"id":74,"nome":"POLIESTER FIADO - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - PRETO"},{"id":75,"nome":"POLIESTER FIADO - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - BRANCO"},{"id":76,"nome":"POLIESTER FIADO - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - PRETO"},{"id":77,"nome":"VISCOSE - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - BRANCO"},{"id":78,"nome":"VISCOSE - MOLECOTTON + 3%  ELASTANO (1,80 m x 250 g/m2) - PRETO"},{"id":79,"nome":"VISCOSE - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - BRANCO"},{"id":80,"nome":"VISCOSE - MOLECOTTON + 6%  ELASTANO (1,80 m x 300 g/m2) - PRETO"}];
+const API='https://calculadoraavancada.modaprodutiva.com.br/';
+const SHEETS_API='https://script.google.com/macros/s/AKfycbxFMI7DaHKQ6udbZmeH71M-SGpLAN_3gXPpEdunZe6xCchqhwA8RqxbVwffJ_pi-bKXVQ/exec';
+// All known fio types (34 from site + 7 new 40/1)
+const ALL_FIOS={"ALGODÃO - 24/1 O.E.":16.1,"ALGODÃO - 26/1 PENT.":22.3,"ALGODÃO - 30/1 O.E.":16.9,"ALGODÃO - 30/1 PENT.":22.8,"ALGODÃO - 40/1 O.E.":0,"ALGODÃO - 40/1 PENT.":0,"ELASTANO 20":29.15,"ELASTANO 30":28.4,"ELASTANO 40":26.35,"ELASTANO 50":26,"ELASTANO 70":26.35,"PA 50/50 - 24/1 O.E.":16.4,"PA 50/50 - 24/1 VORTEX":23,"PA 50/50 - 30/1 O.E.":17.4,"PA 50/50 - 30/1 VORTEX":19.3,"PA 50/50 - 40/1 O.E.":0,"PA 50/50 - 40/1 VORTEX":0,"PA 50/50 - 8/1 CONV.":21,"PA 50/50 - 8/1 O.E.":19.9,"PES - 100/144 TX.":9.35,"PES - 100/144 TX. PRETO":11.9,"PES - 150/144 TX.":9.1,"PES - 150/144 TX. PRETO":10.8,"PES - 150/96 TX.":9.55,"PES - 200/96 TX.":9,"PES - 200/96 TX. PRETO":10.5,"PES - 50/24 LISO":11,"PES - 75/36 TX.":9.8,"PES - 75/36 TX. PRETO":12,"PES - 75/72 TX.":10,"PES - 75/72 TX. PRETO":12.1,"PES FIADO - 30/1":11.7,"PES FIADO - 40/1":0,"POLIAMIDA - 1/70/68 TX.":24.2,"POLIAMIDA - 2/70/24 TX.":23.65,"POLIAMIDA - 2/70/68 TX.":24.2,"POLIAMIDA - 200/144 TX. AR":27.7,"PV - 30/1 CONV.":15.35,"PV - 40/1 CONV.":0,"VISCOSE - 30/1 VORTEX":17.85,"VISCOSE - 40/1 VORTEX":0};
+let isLive=false,editing=false,_L=null,_curArt=null;
+// Google Sheets supplier cache
+let _sheetsCache=null,_sheetsCacheTime=0;
+async function loadSheetsSuppliers(force){
+    const CACHE_TTL=5*60*1000; // 5 min
+    if(!force&&_sheetsCache&&(Date.now()-_sheetsCacheTime)<CACHE_TTL) return _sheetsCache;
+    try{
+        const r=await fetch(SHEETS_API+'?action=getAllFornecedores');
+        const d=await r.json();
+        if(d.error) throw new Error(d.error);
+        _sheetsCache=d;_sheetsCacheTime=Date.now();
+        console.log('Sheets: fornecedores carregados',d);
+        return d;
+    }catch(e){console.warn('Sheets offline:',e);return _sheetsCache||{fios:{},tecelagem:{},tinturaria:{}}}
+}
+function getSheetsForFio(fioName){return (_sheetsCache&&_sheetsCache.fios&&_sheetsCache.fios[fioName])||[]}
+function getSheetsForTecelagem(artigoName){return (_sheetsCache&&_sheetsCache.tecelagem&&_sheetsCache.tecelagem[artigoName])||[]}
+function getSheetsForTinturaria(artigoName){return (_sheetsCache&&_sheetsCache.tinturaria&&_sheetsCache.tinturaria[artigoName])||[]}
+
+// === STORAGE: fornecedores are GLOBAL (shared across all articles that use the same item type)
+// Structure: { "fio:ALGODÃO - 30/1 PENT.": [{nome:"Forn A",preco:22.8,ativo:true},{nome:"Forn B",preco:21.5}], "malharia": [...], "tingir": [...] }
+function getSuppliers(){try{return JSON.parse(localStorage.getItem('malhas_suppliers_v2'))||{}}catch(e){return{}}}
+function saveSuppliers(d){localStorage.setItem('malhas_suppliers_v2',JSON.stringify(d))}
+
+function getSuppliersForKey(key){return getSuppliers()[key]||[]}
+function saveSuppliersForKey(key,list){const s=getSuppliers();s[key]=list;saveSuppliers(s)}
+function getActiveSupplier(key){const list=getSuppliersForKey(key);return list.find(s=>s.ativo)||null}
+
+// Per-artigo overrides for quebra
+function getArtigoOverrides(){try{return JSON.parse(localStorage.getItem('malhas_overrides_v1'))||{}}catch(e){return{}}}
+function saveArtigoOverride(id,data){const o=getArtigoOverrides();o[id]=data;localStorage.setItem('malhas_overrides_v1',JSON.stringify(o))}
+function getOverrideForArtigo(id){return getArtigoOverrides()[id]||{}}
+
+function fB(v,d){if(v==null||isNaN(v))return'–';return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:d??2,maximumFractionDigits:d??2}).format(v)}
+function fR(v,d){return'R$ '+fB(v,d)}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+// === FETCH LIVE ===
+async function fetchLive(id){
+    const fd=new URLSearchParams();
+    fd.append('inputArtigo',id);fd.append('inputQtdeProduzir','1000');fd.append('inputNome','app');
+    fd.append('inputEmail','app@app.com');fd.append('inputTelefone','0');fd.append('inputValorCompra1KgCor','50.00');fd.append('submit','');
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd.toString()});
+    const html=await r.text();
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    const gv=(i)=>{const e=doc.getElementById(i);return e?(e.value||'').trim():null};
+    const st=(i)=>{const s=doc.getElementById(i);if(!s)return null;const o=s.querySelector('option[selected]');return o?o.textContent.trim():null};
+    const pn=(v)=>{if(!v)return null;return parseFloat(v.replace(/[^\d,.\-]/g,'').replace(/\./g,'').replace(',','.'))};
+    return{id,largura:pn(gv('inputLargura')),gramatura:pn(gv('inputGramatura')),rendimento:pn(gv('inputRendimento')),acabamento:st('inputAcabamento'),
+        fios:[gv('inputFio1Titulo')?{titulo:gv('inputFio1Titulo'),preco:pn(gv('inputPrecoUnitarioFio1')),pct:pn(gv('inputFio1Percentual')),final:pn(gv('inputFio1PrecoFinal'))}:null,
+              gv('inputFio2Titulo')?{titulo:gv('inputFio2Titulo'),preco:pn(gv('inputPrecoUnitarioFio2')),pct:pn(gv('inputFio2Percentual')),final:pn(gv('inputFio2PrecoFinal'))}:null,
+              gv('inputFio3Titulo')?{titulo:gv('inputFio3Titulo'),preco:pn(gv('inputPrecoUnitarioFio3')),pct:pn(gv('inputFio3Percentual')),final:pn(gv('inputFio3PrecoFinal'))}:null].filter(Boolean),
+        malharia:pn(gv('inputMalharia')),tingir:pn(gv('inputTingir')),quebra:pn(gv('inputQuebra')),custoProduzida:pn(gv('inputCustoMalhaProduzida'))};
+}
+async function getArtigo(id){
+    try{const live=await fetchLive(id);if(live&&live.custoProduzida){isLive=true;document.getElementById('badgeS').className='badge badge-live';document.getElementById('badgeS').textContent='AO VIVO';return live;}}catch(e){}
+    isLive=false;document.getElementById('badgeS').className='badge badge-off';document.getElementById('badgeS').textContent='OFFLINE';return DB[id]||null;
+}
+
+// Apply supplier overrides
+function applyOverrides(artigo){
+    const a={...artigo,fios:artigo.fios.map(f=>({...f}))};
+    const ov=getOverrideForArtigo(a.id);
+    // Fios: check if there's an active supplier for each fio type
+    a.fios.forEach((f,i)=>{
+        const key='fio:'+f.titulo;
+        const sup=getActiveSupplier(key);
+        if(sup){f.preco=sup.preco;f.final=f.preco*(f.pct/100);f.fornecedor=sup.nome;}
+    });
+    // Malharia
+    const mSup=getActiveSupplier('malharia');
+    if(mSup){a.malharia=mSup.preco;a.fornMalharia=mSup.nome;}
+    // Tinturaria
+    const tSup=getActiveSupplier('tingir');
+    if(tSup){a.tingir=tSup.preco;a.fornTingir=tSup.nome;}
+    // Quebra override per artigo
+    if(ov.quebra!=null) a.quebra=ov.quebra;
+    // Recalc
+    const totalFios=a.fios.reduce((s,f)=>s+f.final,0);
+    a.custoProduzida=Math.round((totalFios+a.malharia+a.tingir)*(1+a.quebra/100)*100)/100;
+    return a;
+}
+
+// === SEARCH ===
+function filtrarMalhas(){
+    const t=document.getElementById('campoPesquisa').value.toLowerCase().trim();
+    const l=document.getElementById('acList');const b=document.getElementById('btnSeta');l.innerHTML='';b.classList.remove('open');
+    if(!t){l.classList.remove('show');return}
+    const pp=t.split(/\s+/);
+    const ff=ML.filter(m=>{const n=m.nome.toLowerCase();return pp.every(p=>n.includes(p))});
+    if(!ff.length){l.classList.remove('show');return}
+    ff.forEach(m=>{const d=document.createElement('div');d.className='aci';d.textContent=m.nome;d.onclick=()=>{
+        document.getElementById('campoPesquisa').value=m.nome;document.getElementById('inputArtigo').value=m.id;
+        l.classList.remove('show');b.classList.remove('open');
+    };l.appendChild(d)});l.classList.add('show');
+}
+function limparPesquisa(){document.getElementById('campoPesquisa').value='';document.getElementById('inputArtigo').value='';document.getElementById('acList').classList.remove('show');document.getElementById('btnSeta').classList.remove('open')}
+function toggleLista(){
+    const l=document.getElementById('acList');const b=document.getElementById('btnSeta');
+    if(l.classList.contains('show')){l.classList.remove('show');b.classList.remove('open');return}
+    l.innerHTML='';ML.forEach(m=>{const d=document.createElement('div');d.className='aci';d.textContent=m.nome;d.onclick=()=>{
+        document.getElementById('campoPesquisa').value=m.nome;document.getElementById('inputArtigo').value=m.id;
+        l.classList.remove('show');b.classList.remove('open');
+    };l.appendChild(d)});l.classList.add('show');b.classList.add('open');
+}
+document.addEventListener('click',e=>{const s=document.getElementById('campoPesquisa'),l=document.getElementById('acList'),b=document.getElementById('btnSeta');
+    if(!s.contains(e.target)&&!l.contains(e.target)&&!b.contains(e.target)){l.classList.remove('show');b.classList.remove('open')}});
+
+// === CALCULATE ===
+async function calcular(){
+    const aid=parseInt(document.getElementById('inputArtigo').value);
+    const qtd=parseFloat(document.getElementById('inputQtde').value);
+    const vc=parseFloat(document.getElementById('inputValor').value);
+    if(!aid){alert('Selecione um artigo!');return}
+    if(!qtd||qtd<=0){alert('Informe a quantidade!');return}
+    if(!vc||vc<=0){alert('Informe o valor da malha comprada!');return}
+    const btn=document.getElementById('btnCalc');btn.classList.add('loading');btn.disabled=true;btn.innerHTML='&#9889; Buscando...';
+    let [raw]=await Promise.all([getArtigo(aid),loadSheetsSuppliers()]);
+    btn.classList.remove('loading');btn.disabled=false;btn.innerHTML='&#9889; Calcular';
+    if(!raw){alert('Artigo não encontrado!');return}
+    _curArt=raw;
+    renderAll(raw,qtd,vc);
+}
+
+function renderAll(raw,qtd,vc){
+    const a=applyOverrides(raw);
+    const ml=ML.find(m=>m.id===raw.id);
+    const cp=a.custoProduzida,ek=vc-cp,em=ek*qtd,dif=vc>0?((ek/vc)*100):0;
+    document.getElementById('cRes').classList.remove('hidden');
+    document.getElementById('cPlan').classList.remove('hidden');
+    document.getElementById('resArt').textContent=ml?ml.nome:'';
+    document.getElementById('rCK').textContent=fR(vc);
+    document.getElementById('rPK').textContent=fR(cp);
+    document.getElementById('rCT').textContent=fR(vc*qtd);
+    document.getElementById('rPT').textContent=fR(cp*qtd);
+    document.getElementById('rCL').textContent=fB(qtd,0)+' kg mensal';
+    document.getElementById('rPL').textContent=fB(qtd,0)+' kg mensal';
+    const de=document.getElementById('rDif');de.textContent=fB(dif)+'%';de.className='rv'+(dif<0?' neg':'');
+    const ke=document.getElementById('rEK');ke.textContent=fR(ek);ke.className='rv'+(ek<0?' neg':'');
+    const me=document.getElementById('rEM');me.textContent=fR(em);me.className='rv'+(em<0?' neg':'');
+    document.getElementById('charGrid').innerHTML=`
+        <div class="ci"><span class="lbl">Largura</span><span class="val">${fB(a.largura)} m</span></div>
+        <div class="ci"><span class="lbl">Gramatura</span><span class="val">${fB(a.gramatura,0)} g/m²</span></div>
+        <div class="ci"><span class="lbl">Acabamento</span><span class="val">${a.acabamento||'–'}</span></div>
+        <div class="ci"><span class="lbl">Rendimento</span><span class="val">${fB(a.rendimento)} m/Kg</span></div>`;
+    renderCost(a,false);
+    _L={ml,a,qtd,vc,cp,ek,em,dif};
+    editing=false;
+    document.getElementById('editBtns').innerHTML='<button class="btn-forn-cat" onclick="abrirFornecedores()">&#128666; Fornecedores</button> <button class="btn-edit" onclick="toggleEdit()">&#9998; Editar</button>';
+}
+
+function renderCost(a,editMode){
+    const totalFios=a.fios.reduce((s,f)=>s+f.final,0);
+    const subtotal=totalFios+a.malharia+a.tingir;
+    const valorQuebra=subtotal*(a.quebra/100);
+    let h='<div class="cost-section-title">Composição dos Fios</div>';
+    const ml=ML.find(m=>m.id===a.id);
+    const artName=ml?ml.nome:'';
+
+    a.fios.forEach((f,i)=>{
+        const key='fio:'+f.titulo;
+        const sups=getSuppliersForKey(key);
+        const activeSup=getActiveSupplier(key);
+        const sheetsSups=getSheetsForFio(f.titulo);
+        h+=`<div class="cost-item">
+            <div class="cost-item-header">
+                <div class="cost-item-title">Fio ${i+1}: ${f.titulo} <span style="color:var(--mut);font-weight:400;font-size:12px">(${fB(f.pct,0)}%)</span></div>
+                <div class="cost-item-val">${fR(f.final)}/kg</div>
+            </div>
+            <div class="cost-item-sub">Preço unit.: ${fR(f.preco)}/kg &times; ${fB(f.pct,0)}%</div>`;
+        if(activeSup&&!editMode) h+=`<div class="cost-forn">&#128666; ${activeSup.nome}</div>`;
+        if(sheetsSups.length>0&&!editMode) h+=renderSheetsChips(sheetsSups,'fio');
+        if(editMode) h+=renderSupplierEditor(key,sups,f.preco,sheetsSups);
+        h+='</div>';
+    });
+
+    h+='<div class="cost-section-title">Custos Industriais</div>';
+    const mKey='malharia';const mSups=getSuppliersForKey(mKey);const mActive=getActiveSupplier(mKey);
+    const mSheets=getSheetsForTecelagem(artName);
+    h+=`<div class="cost-item">
+        <div class="cost-item-header"><div class="cost-item-title">Malharia (fabricação)</div><div class="cost-item-val">${fR(a.malharia)}/kg</div></div>`;
+    if(mActive&&!editMode) h+=`<div class="cost-forn">&#128666; ${mActive.nome}</div>`;
+    if(mSheets.length>0&&!editMode) h+=renderSheetsChips(mSheets,'tec');
+    if(editMode) h+=renderSupplierEditor(mKey,mSups,a.malharia,mSheets);
+    h+='</div>';
+
+    const tKey='tingir';const tSups=getSuppliersForKey(tKey);const tActive=getActiveSupplier(tKey);
+    const tSheets=getSheetsForTinturaria(artName);
+    h+=`<div class="cost-item">
+        <div class="cost-item-header"><div class="cost-item-title">Tinturaria (tingimento)</div><div class="cost-item-val">${fR(a.tingir)}/kg</div></div>`;
+    if(tActive&&!editMode) h+=`<div class="cost-forn">&#128666; ${tActive.nome}</div>`;
+    if(tSheets.length>0&&!editMode) h+=renderSheetsChips(tSheets,'tint');
+    if(editMode) h+=renderSupplierEditor(tKey,tSups,a.tingir,tSheets);
+    h+='</div>';
+
+    const ov=getOverrideForArtigo(a.id);
+    h+='<div class="cost-section-title">Perdas</div>';
+    h+=`<div class="cost-item"><div class="cost-item-header"><div class="cost-item-title">Quebra</div><div class="cost-item-val">${fB(a.quebra,0)}% &rarr; + ${fR(valorQuebra)}</div></div>`;
+    if(editMode){
+        h+=`<div class="edit-row" style="margin-top:6px"><span style="font-size:12px;color:var(--mut)">Quebra %:</span><input class="fpc" type="number" step="0.5" min="0" max="30" value="${a.quebra}" id="editQuebra"></div>`;
+    }
+    h+='</div>';
+
+    h+=`<div class="cost-subtotal"><span>Subtotal</span><span style="font-family:'Space Mono',monospace">${fR(subtotal)}</span></div>`;
+    h+=`<div class="cost-quebra"><span>Quebra ${fB(a.quebra,0)}%</span><span style="font-family:'Space Mono',monospace">+ ${fR(valorQuebra)}</span></div>`;
+    h+=`<div class="cost-total"><span class="lbl">CUSTO PRODUZIDA</span><span class="val">${fR(a.custoProduzida)}</span></div>`;
+
+    document.getElementById('costContent').innerHTML=h;
+}
+
+function renderSheetsChips(list,type){
+    let h='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">';
+    list.forEach(s=>{
+        const dif=s.precoSite>0?((s.preco-s.precoSite)/s.precoSite*100):0;
+        const difStr=dif!==0?(dif>0?`+${fB(dif,1)}%`:`${fB(dif,1)}%`):'';
+        const difColor=dif<0?'#009624':dif>0?'#c62828':'var(--mut)';
+        h+=`<span style="display:inline-flex;align-items:center;gap:4px;background:#f3e8fd;border-radius:6px;padding:2px 8px;font-size:11px">
+            <span style="color:#7b1fa2;font-weight:700">📊</span>
+            <span style="font-weight:600">${s.nome}</span>
+            <span style="font-family:'Space Mono',monospace;font-weight:700">${fR(s.preco)}</span>
+            ${difStr?`<span style="color:${difColor};font-size:10px;font-weight:600">${difStr}</span>`:''}
+        </span>`;
+    });
+    h+='</div>';
+    return h;
+}
+
+function renderSupplierEditor(key,sups,defaultPrice,sheetsSups){
+    sheetsSups=sheetsSups||[];
+    const safeKey=key.replace(/[^a-z0-9]/gi,'_');
+    const activeIdx=sups.findIndex(s=>s.ativo);
+    const currentPrice=activeIdx>=0?sups[activeIdx].preco:defaultPrice;
+
+    let h=`<div style="margin-top:8px">`;
+    h+=`<div style="display:flex;gap:6px;align-items:center">`;
+    h+=`<div style="flex:1"><label style="margin-bottom:4px">Fornecedor</label>
+        <select onchange="onSelectSupplier('${esc(key)}',this.value)" style="font-size:13px">
+            <option value="-1" ${activeIdx<0?'selected':''}>Preço do site (padrão) — ${fR(defaultPrice)}</option>`;
+    sups.forEach((s,i)=>{
+        h+=`<option value="${i}" ${i===activeIdx?'selected':''}>${s.nome} — ${fR(s.preco)}/kg</option>`;
+    });
+    if(sheetsSups.length>0){
+        h+=`<optgroup label="📊 Da Planilha Google">`;
+        sheetsSups.forEach((s,i)=>{
+            const dif=s.precoSite>0?((s.preco-s.precoSite)/s.precoSite*100):0;
+            const difStr=dif!==0?(dif>0?` (+${fB(dif,1)}%)`:`(${fB(dif,1)}%)`):'';
+            h+=`<option value="sheet_${i}">📊 ${s.nome} — ${fR(s.preco)}/kg ${difStr}</option>`;
+        });
+        h+=`</optgroup>`;
+    }
+    h+=`</select></div>`;
+    h+=`<div style="width:100px"><label style="margin-bottom:4px">R$/kg</label>
+        <input type="number" step="0.01" min="0" value="${currentPrice}" id="precoAtual_${safeKey}" style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;background:#f0faf4;font-weight:700" disabled>
+    </div>`;
+    h+=`</div>`;
+
+    // Add new supplier row (collapsible)
+    h+=`<div class="forn-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <span class="tarr">&#9654;</span> Cadastrar novo fornecedor
+    </div>`;
+    h+=`<div class="forn-panel">
+        <div class="edit-row">
+            <input class="fn" type="text" placeholder="Nome do fornecedor" id="newFornNome_${safeKey}">
+            <input class="fp" type="number" step="0.01" min="0" placeholder="R$/kg" id="newFornPreco_${safeKey}">
+            <button class="btn-add" onclick="addSupplier('${esc(key)}')">+ Add</button>
+        </div>
+    </div>`;
+    h+=`</div>`;
+    return h;
+}
+
+function onSelectSupplier(key,val){
+    // Handle sheets supplier (sheet_0, sheet_1, etc.)
+    if(val.startsWith('sheet_')){
+        const si=parseInt(val.substring(6));
+        let sheetsSups=[];
+        if(_curArt){
+            const ml=ML.find(m=>m.id===_curArt.id);
+            const artName=ml?ml.nome:'';
+            if(key.startsWith('fio:')){
+                sheetsSups=getSheetsForFio(key.substring(4));
+            } else if(key==='malharia'){
+                sheetsSups=getSheetsForTecelagem(artName);
+            } else if(key==='tingir'){
+                sheetsSups=getSheetsForTinturaria(artName);
+            }
+        }
+        if(sheetsSups[si]){
+            // Import from sheets to local as active
+            const list=getSuppliersForKey(key);
+            list.forEach(s=>s.ativo=false);
+            const existing=list.findIndex(s=>s.nome===sheetsSups[si].nome);
+            if(existing>=0){
+                list[existing].preco=sheetsSups[si].preco;
+                list[existing].ativo=true;
+            } else {
+                list.push({nome:sheetsSups[si].nome+'  📊',preco:sheetsSups[si].preco,ativo:true});
+            }
+            saveSuppliersForKey(key,list);
+            const safeKey=key.replace(/[^a-z0-9]/gi,'_');
+            const priceEl=document.getElementById('precoAtual_'+safeKey);
+            if(priceEl) priceEl.value=sheetsSups[si].preco;
+        }
+        return;
+    }
+    const idx=parseInt(val);
+    const list=getSuppliersForKey(key);
+    list.forEach((s,i)=>s.ativo=(i===idx));
+    saveSuppliersForKey(key,list);
+    const safeKey=key.replace(/[^a-z0-9]/gi,'_');
+    const priceEl=document.getElementById('precoAtual_'+safeKey);
+    if(priceEl){
+        if(idx>=0&&list[idx]){
+            priceEl.value=list[idx].preco;
+        } else {
+            if(_curArt){
+                const a=_curArt;
+                if(key.startsWith('fio:')){
+                    const fioTitulo=key.substring(4);
+                    const fio=a.fios.find(f=>f.titulo===fioTitulo);
+                    if(fio) priceEl.value=fio.preco;
+                } else if(key==='malharia') priceEl.value=a.malharia;
+                else if(key==='tingir') priceEl.value=a.tingir;
+            }
+        }
+    }
+}
+
+function esc(s){return s.replace(/'/g,"\\'")}
+
+// === SUPPLIER ACTIONS ===
+function addSupplier(key){
+    const safeKey=key.replace(/[^a-z0-9]/gi,'_');
+    const nomeEl=document.getElementById('newFornNome_'+safeKey);
+    const precoEl=document.getElementById('newFornPreco_'+safeKey);
+    if(!nomeEl||!precoEl)return;
+    const nome=nomeEl.value.trim();
+    const preco=parseFloat(precoEl.value);
+    if(!nome){alert('Informe o nome do fornecedor!');return}
+    if(!preco||preco<=0){alert('Informe o preço!');return}
+    const list=getSuppliersForKey(key);
+    // Auto-activate if first supplier
+    const autoActive=list.length===0;
+    list.push({nome,preco,ativo:autoActive});
+    saveSuppliersForKey(key,list);
+    // Refresh the edit view to show new supplier in dropdown
+    if(_curArt){
+        const a=applyOverrides(_curArt);
+        renderCost(a,true);
+    }
+    toast('&#10003; Fornecedor adicionado!');
+}
+
+function removeSupplier(key,idx){
+    const list=getSuppliersForKey(key);
+    list.splice(idx,1);
+    saveSuppliersForKey(key,list);
+    if(_curArt){
+        const a=applyOverrides(_curArt);
+        renderCost(a,true);
+    }
+}
+
+// === EDIT MODE ===
+function toggleEdit(){
+    if(!_curArt)return;
+    editing=!editing;
+    if(editing){
+        const a=applyOverrides(_curArt);
+        renderCost(a,true);
+        document.getElementById('editBtns').innerHTML=
+            '<button class="btn-save" onclick="salvarEdicao()">&#10003; Salvar</button> '+
+            '<button class="btn-cancel" onclick="cancelarEdicao()">Cancelar</button>';
+    } else { cancelarEdicao(); }
+}
+
+function salvarEdicao(){
+    if(!_curArt)return;
+    // Save quebra override
+    const qEl=document.getElementById('editQuebra');
+    if(qEl){
+        const q=parseFloat(qEl.value);
+        if(!isNaN(q)) saveArtigoOverride(_curArt.id,{quebra:q});
+    }
+    editing=false;
+    if(_L) renderAll(_curArt,_L.qtd,_L.vc);
+    toast('&#10003; Dados salvos!');
+}
+
+function cancelarEdicao(){
+    editing=false;
+    if(_curArt&&_L){
+        const a=applyOverrides(_curArt);
+        renderCost(a,false);
+    }
+    document.getElementById('editBtns').innerHTML='<button class="btn-forn-cat" onclick="abrirFornecedores()">&#128666; Fornecedores</button> <button class="btn-edit" onclick="toggleEdit()">&#9998; Editar</button>';
+}
+
+// === MODAL ===
+function extrairCor(t){if(!t)return'';const p=t.split(' - ');return p[p.length-1].trim()}
+function abrirModal(){
+    if(!_L)return;const c=_L;const cor=extrairCor(c.ml.nome);
+    document.getElementById('mBody').innerHTML=
+        '<p>Simulação da malha <strong>'+cor+'</strong>, '+fB(c.qtd,0)+' kg/mês.</p>'+
+        '<p>Comprada: <strong>'+fR(c.vc)+'</strong>/kg. Produzida: <strong>'+fR(c.cp)+'</strong>/kg.</p>'+
+        '<p>Economia: <strong>'+fR(c.ek)+'</strong>/kg (<strong>'+fB(c.dif)+'%</strong>).</p>'+
+        '<p>Mensal: <strong>'+fR(c.em)+'</strong>. Anual: <strong>'+fR(c.em*12)+'</strong>.</p>';
+    document.getElementById('modal').classList.add('show');
+}
+let _ct;
+function copiar(){
+    const t=document.getElementById('mBody').innerText.trim();if(!t)return;
+    if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(showCF)}
+    else{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;left:-9999px';document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);showCF()}
+}
+function showCF(){const f=document.getElementById('cfb');f.classList.add('show');if(_ct)clearTimeout(_ct);_ct=setTimeout(()=>f.classList.remove('show'),2000)}
+
+// === SUPPLIER CATALOG ===
+let supTabActive='fios';
+function abrirFornecedores(){
+    supTabActive='fios';
+    renderSupCatalog();
+    document.getElementById('supModal').classList.add('show');
+}
+
+function renderSupCatalog(){
+    const allSups=getSuppliers();
+    // Categorize
+    const cats={fios:{},malharia:[],tingir:[]};
+    Object.keys(allSups).forEach(key=>{
+        const list=allSups[key];
+        if(!list||!list.length) return;
+        if(key.startsWith('fio:')){
+            const fioName=key.substring(4);
+            cats.fios[fioName]=list;
+        } else if(key==='malharia'){
+            cats.malharia=list;
+        } else if(key==='tingir'){
+            cats.tingir=list;
+        }
+    });
+
+    // Tabs
+    const fioCount=Object.values(cats.fios).reduce((s,l)=>s+l.length,0);
+    let tabs=`<div class="sup-tab ${supTabActive==='fios'?'active':''}" onclick="supTabActive='fios';renderSupCatalog()">&#129525; Fios (${fioCount})</div>`;
+    tabs+=`<div class="sup-tab ${supTabActive==='malharia'?'active':''}" onclick="supTabActive='malharia';renderSupCatalog()">&#9881; Malharia (${cats.malharia.length})</div>`;
+    tabs+=`<div class="sup-tab ${supTabActive==='tingir'?'active':''}" onclick="supTabActive='tingir';renderSupCatalog()">&#127912; Tinturaria (${cats.tingir.length})</div>`;
+    document.getElementById('supTabs').innerHTML=tabs;
+
+    let content='';
+    if(supTabActive==='fios'){
+        const fioKeys=Object.keys(cats.fios).sort();
+        // Also list fio types with no suppliers
+        const allFioTypes=Object.keys(ALL_FIOS).sort();
+        if(!allFioTypes.length){
+            content='<div class="sup-empty">Nenhum fio cadastrado.</div>';
+        } else {
+            content='<div class="sup-cat">';
+            allFioTypes.forEach(fioName=>{
+                const list=cats.fios[fioName]||[];
+                const refPrice=ALL_FIOS[fioName];
+                const priceLabel=refPrice>0?` (ref. site: ${fR(refPrice)})`:' (sem preço ref.)';
+                content+=`<div class="sup-cat-title">&#129525; ${fioName}<span style="font-weight:400;font-size:10px;color:var(--mut)">${priceLabel}</span></div>`;
+                if(!list.length){
+                    content+=`<div style="padding:6px 12px;font-size:11px;color:var(--mut);font-style:italic">Nenhum fornecedor cadastrado</div>`;
+                } else {
+                    list.forEach((s,i)=>{
+                        content+=`<div class="sup-cat-item ${s.ativo?'active':''}">
+                            <span class="sname">${s.nome}</span>
+                            <span class="sprice">${fR(s.preco)}/kg</span>
+                            ${s.ativo?'<span class="sbadge">Ativo</span>':''}
+                            <button class="btn-del" onclick="removeSupFromCatalog('fio:${esc(fioName)}',${i})" title="Remover">&#10005;</button>
+                        </div>`;
+                    });
+                }
+            });
+            content+='</div>';
+        }
+    } else {
+        const key=supTabActive;
+        const label=key==='malharia'?'Malharia':'Tinturaria';
+        const list=cats[key]||[];
+        if(!list.length){
+            content=`<div class="sup-empty">Nenhum fornecedor de ${label.toLowerCase()} cadastrado.<br>Calcule um artigo e clique em Editar para adicionar.</div>`;
+        } else {
+            content='<div class="sup-cat">';
+            content+=`<div class="sup-cat-title">${label}</div>`;
+            list.forEach((s,i)=>{
+                content+=`<div class="sup-cat-item ${s.ativo?'active':''}">
+                    <span class="sname">${s.nome}</span>
+                    <span class="sprice">${fR(s.preco)}/kg</span>
+                    ${s.ativo?'<span class="sbadge">Ativo</span>':''}
+                    <button class="btn-del" onclick="removeSupFromCatalog('${esc(key)}',${i})" title="Remover">&#10005;</button>
+                </div>`;
+            });
+            content+='</div>';
+        }
+    }
+    document.getElementById('supContent').innerHTML=content;
+}
+
+function removeSupFromCatalog(key,idx){
+    const list=getSuppliersForKey(key);
+    list.splice(idx,1);
+    saveSuppliersForKey(key,list);
+    renderSupCatalog();
+    toast('Fornecedor removido');
+}
+</script>
+</body>
+</html>
