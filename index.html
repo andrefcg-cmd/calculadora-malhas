@@ -709,7 +709,7 @@ function renderSupCatalog(){
     const corBadge=artCor?`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;${artCor==='PRETO'?'background:#333;color:#fff':'background:#f5f5f5;color:#333;border:1px solid #ddd'}">${artCor}</span>`:'';
 
     let content='';
-    if(!hasArt){
+    if(!hasArt&&supTabActive!=='todos'){
         content='<div class="sup-empty">Calcule um artigo primeiro para ver os fornecedores relevantes.</div>';
     } else if(supTabActive==='fios'){
         content='<div class="sup-cat">';
@@ -749,7 +749,7 @@ function renderSupCatalog(){
             }
         });
         content+='</div>';
-    } else {
+    } else if(supTabActive==='malharia'||supTabActive==='tingir'){
         const key=supTabActive;
         const label=key==='malharia'?'Malharia (fabricação)':'Tinturaria (tingimento)';
         const localList=cats[key]||[];
