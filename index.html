@@ -1421,6 +1421,6 @@ function updatePV() {
 }
 // ============== END PLANO COMERCIAL ==============
 </script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(r=>console.log('SW registered')).catch(e=>console.log('SW failed',e));}</script>
+<script>if('serviceWorker' in navigator){fetch('sw.js',{method:'HEAD'}).then(r=>{if(r.ok)navigator.serviceWorker.register('sw.js')}).catch(()=>{})}</script>
 </body>
 </html>
