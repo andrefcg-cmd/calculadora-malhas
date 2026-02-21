@@ -137,7 +137,7 @@ select:focus{border-color:var(--pri)}
 <body>
 <div class="top-bar">
     <h1>&#129526; Calculadora de Malhas</h1>
-    <div class="sub"><small>Comparar Malha Comprada &times; Produzida</small><span class="badge badge-live" id="badgeS">AO VIVO</span></div>
+    <div class="sub"><small>Comparar Malha Comprada &times; Produzida</small><button id="btnCheck" onclick="checkUpdates()" style="background:none;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;margin-left:8px">🔄 Verificar</button><span class="badge badge-live" id="badgeS">AO VIVO</span></div>
 </div>
 <div class="container">
     <div class="card">
@@ -280,26 +280,45 @@ function fB(v,d){if(v==null||isNaN(v))return'–';return new Intl.NumberFormat('
 function fR(v,d){return'R$ '+fB(v,d)}
 function toast(msg){const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
-// === FETCH LIVE ===
+// === FETCH LIVE (via Google Apps Script proxy) ===
 async function fetchLive(id){
-    const fd=new URLSearchParams();
-    fd.append('inputArtigo',id);fd.append('inputQtdeProduzir','1000');fd.append('inputNome','app');
-    fd.append('inputEmail','app@app.com');fd.append('inputTelefone','0');fd.append('inputValorCompra1KgCor','50.00');fd.append('submit','');
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd.toString()});
-    const html=await r.text();
-    const doc=new DOMParser().parseFromString(html,'text/html');
-    const gv=(i)=>{const e=doc.getElementById(i);return e?(e.value||'').trim():null};
-    const st=(i)=>{const s=doc.getElementById(i);if(!s)return null;const o=s.querySelector('option[selected]');return o?o.textContent.trim():null};
-    const pn=(v)=>{if(!v)return null;return parseFloat(v.replace(/[^\d,.\-]/g,'').replace(/\./g,'').replace(',','.'))};
-    return{id,largura:pn(gv('inputLargura')),gramatura:pn(gv('inputGramatura')),rendimento:pn(gv('inputRendimento')),acabamento:st('inputAcabamento'),
-        fios:[gv('inputFio1Titulo')?{titulo:gv('inputFio1Titulo'),preco:pn(gv('inputPrecoUnitarioFio1')),pct:pn(gv('inputFio1Percentual')),final:pn(gv('inputFio1PrecoFinal'))}:null,
-              gv('inputFio2Titulo')?{titulo:gv('inputFio2Titulo'),preco:pn(gv('inputPrecoUnitarioFio2')),pct:pn(gv('inputFio2Percentual')),final:pn(gv('inputFio2PrecoFinal'))}:null,
-              gv('inputFio3Titulo')?{titulo:gv('inputFio3Titulo'),preco:pn(gv('inputPrecoUnitarioFio3')),pct:pn(gv('inputFio3Percentual')),final:pn(gv('inputFio3PrecoFinal'))}:null].filter(Boolean),
-        malharia:pn(gv('inputMalharia')),tingir:pn(gv('inputTingir')),quebra:pn(gv('inputQuebra')),custoProduzida:pn(gv('inputCustoMalhaProduzida'))};
+    const r=await fetch(SHEETS_API+'?action=fetchSite&id='+id);
+    const d=await r.json();
+    if(d.error) throw new Error(d.error);
+    if(!d.custoProduzida) throw new Error('No data');
+    return d;
 }
 async function getArtigo(id){
     try{const live=await fetchLive(id);if(live&&live.custoProduzida){isLive=true;document.getElementById('badgeS').className='badge badge-live';document.getElementById('badgeS').textContent='AO VIVO';return live;}}catch(e){}
-    isLive=false;document.getElementById('badgeS').className='badge badge-off';document.getElementById('badgeS').textContent='OFFLINE';return DB[id]||null;
+    isLive=false;document.getElementById('badgeS').className='badge badge-off';document.getElementById('badgeS').textContent='DADOS LOCAIS';return DB[id]||null;
+}
+
+// === CHECK UPDATES ===
+async function checkUpdates(){
+    const btn=document.getElementById('btnCheck');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Verificando...';}
+    try{
+        const r=await fetch(SHEETS_API+'?action=getLastCheck');
+        const d=await r.json();
+        if(d.error) throw new Error(d.error);
+        if(!d.hasData){
+            toast('ℹ️ Nenhuma varredura realizada ainda. A primeira roda de madrugada.');
+        } else if(d.changes===0){
+            toast('✅ Última varredura: '+d.ok+'/'+d.total+' artigos OK. Preços atualizados!');
+        } else {
+            let msg='⚠️ <b>'+d.changes+' artigo(s) com preço diferente</b><br>';
+            d.changedArticles.slice(0,5).forEach(c=>{
+                msg+=`<span style="font-size:11px">• ${c.artigo.substring(0,40)}… — ${c.detalhes}</span><br>`;
+            });
+            if(d.changes>5) msg+=`<span style="font-size:11px">...e mais ${d.changes-5}</span><br>`;
+            msg+='<br><small>Veja a aba "Verificação" na planilha.</small>';
+            const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');
+            setTimeout(()=>t.classList.remove('show'),10000);
+        }
+    }catch(e){
+        toast('❌ Erro: '+e.message);
+    }
+    if(btn){btn.disabled=false;btn.innerHTML='🔄 Verificar';}
 }
 
 // Apply supplier overrides
